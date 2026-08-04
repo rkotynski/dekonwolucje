@@ -1,0 +1,8 @@
+{
+  "architecture": "DRUNet",
+  "channels": 1,
+  "features": 64,
+  "depth": 4,
+  "residual": true,
+  "clamp": true
+}

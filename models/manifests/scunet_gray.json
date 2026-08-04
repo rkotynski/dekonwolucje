@@ -1,0 +1,8 @@
+{
+  "architecture": "SCUNet",
+  "channels": 1,
+  "features": 64,
+  "depth": 8,
+  "residual": true,
+  "clamp": true
+}

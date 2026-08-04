@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dekonwolucje"
+version = "0.103.2"
+description = "Bilingual grayscale image deconvolution GUI with known and blind PSF methods"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Rafał Kotyński" }
+]
+maintainers = [
+  { name = "Rafał Kotyński" }
+]
+keywords = ["deconvolution", "PSF", "Wiener", "Richardson-Lucy", "image processing", "PyQt5", "CUDA"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: English",
+  "Natural Language :: Polish",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "matplotlib>=3.7",
+  "Pillow>=9.5",
+  "scikit-image>=0.21",
+  "PyQt5>=5.15",
+]
+
+[project.optional-dependencies]
+gpu = ["torch>=2.2"]
+test = ["pytest>=8"]
+dev = ["pytest>=8", "build>=1.2", "twine>=5", "ruff>=0.6"]
+
+[project.scripts]
+dekonwolucje = "deconv.main:main"
+
+[project.gui-scripts]
+dekonwolucje-gui = "deconv.main:main"
+
+[project.urls]
+Homepage = "https://github.com/rkotynski/dekonwolucje"
+Repository = "https://github.com/rkotynski/dekonwolucje"
+Issues = "https://github.com/rkotynski/dekonwolucje/issues"
+Documentation = "https://github.com/rkotynski/dekonwolucje/tree/main/docs"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["deconv*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.setuptools.data-files]
+"share/doc/dekonwolucje" = [
+  "docs/Deconvolution_GUI_and_Methods_EN.pdf",
+  "docs/USER_GUIDE_EN.md",
+  "docs/USER_GUIDE_PL.md",
+  "docs/ARCHITECTURE_EN.md",
+  "docs/ARCHITECTURE_PL.md",
+]

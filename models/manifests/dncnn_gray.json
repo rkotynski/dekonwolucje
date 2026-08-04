@@ -1,0 +1,8 @@
+{
+  "architecture": "DnCNN",
+  "channels": 1,
+  "features": 64,
+  "depth": 17,
+  "residual": true,
+  "clamp": true
+}

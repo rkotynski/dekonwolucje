@@ -1,0 +1,30 @@
+name: Bug report / Zgłoszenie błędu
+description: Report a reproducible problem / Zgłoś powtarzalny problem
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description / Opis
+      description: What happened and what was expected? / Co się stało i jaki wynik był oczekiwany?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Kroki odtworzenia
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / Środowisko
+      description: OS, Python, PyTorch/CUDA, GPU and application version.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or traceback / Dziennik lub traceback
+      render: shell

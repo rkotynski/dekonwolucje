@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+.spyproject/
+
+# Runtime configuration and outputs
+*.log
+*.pt
+*.pth
+*.npy
+*.npz
+*.mat
+results/
+outputs/
+deconvolution_gui_settings.json
+
+# OS
+.DS_Store
+Thumbs.db

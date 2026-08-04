@@ -1,0 +1,9 @@
+{
+  "architecture": "FFDNet",
+  "channels": 1,
+  "features": 64,
+  "depth": 12,
+  "noise_level": 0.05,
+  "residual": true,
+  "clamp": true
+}

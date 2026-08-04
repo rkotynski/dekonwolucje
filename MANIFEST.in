@@ -1,0 +1,4 @@
+include README.md CHANGELOG.md LICENSE CITATION.cff CONTRIBUTING.md SECURITY.md
+recursive-include docs *.md *.pdf *.tex
+recursive-include models *.md *.json
+recursive-include .github *.yml *.yaml
