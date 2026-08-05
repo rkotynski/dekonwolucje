@@ -2,6 +2,45 @@
 
 [English](#english) · [Polski](#polski)
 
+
+## Screenshots / Zrzuty ekranu
+
+### Main workflow and bilingual interface / Główny przepływ pracy i interfejs dwujęzyczny
+
+<p align="center">
+  <img src="docs/screenshots/01-gui-overview.png" alt="Main application window with calculation image, PSF and language selector" width="1100">
+</p>
+
+*English:* Main application window with the calculation image and PSF, their histograms and resolution information, and the runtime English/Polish language selector.  
+*Polski:* Główne okno programu z obrazem i PSF używanymi w obliczeniach, ich histogramami i informacją o rozdzielczości oraz przełącznikiem języka angielskiego/polskiego.
+
+### Thresholding and PSF selection / Progowanie i wybór obszaru PSF
+
+<p align="center">
+  <img src="docs/screenshots/02-psf-preparation.png" alt="Threshold controls and editable rectangular calculation PSF" width="1100">
+</p>
+
+*English:* Tab 2 with applied histograms, image and PSF thresholds, and the editable red rectangular support used to create the cropped, unit-sum calculation PSF.  
+*Polski:* Karta 2 z histogramami po zastosowaniu ustawień, progami obrazu i PSF oraz edytowalną czerwoną ramką wyznaczającą przyciętą PSF obliczeniową normalizowaną do sumy jeden.
+
+### Block Kaczmarz parameters / Parametry blokowej metody Kaczmarza
+
+<p align="center">
+  <img src="docs/screenshots/03-kaczmarz-settings.png" alt="Block Kaczmarz algorithm settings" width="900">
+</p>
+
+*English:* Algorithm tab with Block Kaczmarz selected, including block geometry, sweep stabilization, damping, update clipping and Auto controls.  
+*Polski:* Karta algorytmu z wybraną blokową metodą Kaczmarza, obejmująca geometrię bloków, stabilizację przebiegu, tłumienie, ograniczenie aktualizacji i ustawienia Auto.
+
+### Iteration history and result assessment / Historia iteracji i ocena wyniku
+
+<p align="center">
+  <img src="docs/screenshots/04-result-history.png" alt="Iteration history, selected reconstruction and result criteria" width="1100">
+</p>
+
+*English:* Tab 4 after a multi-iteration reconstruction, with the selected result, black/white display levels, batch-computed criteria and the processing log.  
+*Polski:* Karta 4 po rekonstrukcji wieloiteracyjnej, z wybranym wynikiem, poziomami czerni i bieli, kryteriami obliczonymi wsadowo oraz dziennikiem przetwarzania.
+
 ## English
 
 A desktop research application for grayscale-image deconvolution with a known or unknown point-spread function (PSF). The GUI provides Wiener, Richardson–Lucy, Rosen, Landweber, Kaczmarz, Adam TV-MAP and blind-deconvolution variants, with optional PyTorch/CUDA acceleration.
@@ -40,7 +79,7 @@ python run_deconvolution_gui.py
 - [English architecture and developer guide](docs/ARCHITECTURE_EN.md)
 - [English Python API guide](docs/API_EN.md)
 - [English changelog](docs/CHANGELOG_EN.md)
-- [Screenshot file plan and placeholders](docs/screenshots/README.md)
+- [Screenshot source files and captions](docs/screenshots/README.md)
 - [Polish user guide](docs/USER_GUIDE_PL.md)
 - [Polish architecture and developer guide](docs/ARCHITECTURE_PL.md)
 - [Polish changelog](docs/CHANGELOG_PL.md)
@@ -118,12 +157,12 @@ python run_deconvolution_gui.py
 - [Architektura i przewodnik programisty po polsku](docs/ARCHITECTURE_PL.md)
 - [Opis API Pythona po polsku](docs/API_PL.md)
 - [Historia zmian po polsku](docs/CHANGELOG_PL.md)
-- [Plan plików i miejsc na zrzuty ekranu](docs/screenshots/README.md)
+- [Pliki źródłowe zrzutów i podpisy](docs/screenshots/README.md)
 - [English user guide](docs/USER_GUIDE_EN.md)
 - [English architecture and developer guide](docs/ARCHITECTURE_EN.md)
 - [English Python API guide](docs/API_EN.md)
 - [English changelog](docs/CHANGELOG_EN.md)
-- [Screenshot file plan and placeholders](docs/screenshots/README.md)
+- [Screenshot source files and captions](docs/screenshots/README.md)
 
 ### Używanie algorytmów bez GUI
 

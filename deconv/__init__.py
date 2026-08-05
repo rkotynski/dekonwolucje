@@ -1,6 +1,6 @@
 """GUI and reusable Python API for grayscale image deconvolution."""
 
-__version__ = "0.104.3"
+__version__ = "0.104.4"
 
 from .api import (
     DeconvolutionResult,

@@ -1,3 +1,9 @@
+## 0.104.4
+
+- Osadzono cztery końcowe zrzuty GUI bezpośrednio w głównym dwujęzycznym pliku README.
+- Dodano dwujęzyczne podpisy opisujące główny przepływ pracy, przygotowanie PSF, ustawienia blokowej metody Kaczmarza i ocenę iteracji.
+- Usunięto z README określenia sugerujące, że zrzuty są jedynie miejscami zastępczymi.
+
 ## 0.104.3
 
 - Rozszerzono opis metody Richardson-Lucy-Rosen, pokazując, jak nieliniowa korelacja widmowa zastępuje klasyczną projekcję wsteczną sprzężonym operatorem Richardsona-Lucy'ego.

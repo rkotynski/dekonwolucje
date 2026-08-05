@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dekonwolucje"
-version = "0.104.3"
+version = "0.104.4"
 description = "Bilingual grayscale image deconvolution GUI with known and blind PSF methods"
 readme = "README.md"
 requires-python = ">=3.10"

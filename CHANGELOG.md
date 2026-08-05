@@ -1,3 +1,9 @@
+## 0.104.4
+
+- Embedded the four final GUI screenshots directly in the main bilingual README.
+- Added bilingual captions describing the main workflow, PSF preparation, Block Kaczmarz controls and iteration assessment.
+- Removed README wording about screenshot placeholders.
+
 ## 0.104.3
 
 - Expanded the Richardson-Lucy-Rosen documentation to show how the nonlinear spectral correlation replaces the classical Richardson-Lucy adjoint back-projection.
