@@ -1,3 +1,36 @@
+## 0.104.3
+
+- Expanded the Richardson-Lucy-Rosen documentation to show how the nonlinear spectral correlation replaces the classical Richardson-Lucy adjoint back-projection.
+- Defined the distinction between elementwise spectral conjugation `H*` and the adjoint operator `\mathcal H*`.
+- Clarified that `L=M=1` gives circular correlation before normalization, but is not exactly the zero-boundary linear-same Richardson-Lucy update used elsewhere in the program.
+
+## 0.104.2
+
+- Expanded the PDF definition of the zero-boundary linear convolution and related the operator notation explicitly to the calculation PSF.
+- Defined the two-dimensional DFT pair exactly as used by SciPy and PyTorch (`norm="backward"`) and documented the circular-convolution theorem and wrap-around boundary condition.
+- Moved the AI-assisted development disclosure to the end of the PDF.
+
+## 0.104.1
+
+- Added the four supplied GUI screenshots to the repository and English PDF.
+- Replaced screenshot placeholders with final captions tied to the actual views.
+- Added clickable original/classical references for the documented numerical methods.
+- Clarified which hybrid algorithms and stabilization choices are implementation-specific.
+
+## 0.103.3
+
+## 0.104.0
+
+- Added a Qt-independent public Python API for all registered algorithms.
+- Added conversion, synthetic-image, motion-PSF, disturbance, saving, and Wiener convenience functions.
+- Added a complete standalone Wiener example with an oblique motion PSF.
+- Added bilingual API documentation and an API section to the PDF.
+
+- Expanded the mathematical and implementation documentation of the Block Kaczmarz method.
+- Added drop-in screenshot placeholders and a proposed figure set with captions.
+- Added bilingual practical Kaczmarz guidance.
+- Corrected GitHub Actions compatibility for Python 3.10 and optional PyTorch tests.
+
 # v103.2 - translation audit and documentation disclosure
 
 - Audited static and dynamic GUI text and completed missing Polish translations.

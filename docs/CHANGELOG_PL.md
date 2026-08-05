@@ -1,3 +1,36 @@
+## 0.104.3
+
+- Rozszerzono opis metody Richardson-Lucy-Rosen, pokazując, jak nieliniowa korelacja widmowa zastępuje klasyczną projekcję wsteczną sprzężonym operatorem Richardsona-Lucy'ego.
+- Zdefiniowano różnicę między elementowym sprzężeniem widma `H*` a operatorem sprzężonym `\mathcal H*`.
+- Wyjaśniono, że `L=M=1` daje korelację kołową przed normalizacją, ale nie jest dokładnie tożsame z liniowym operatorem `same` z zerowymi warunkami brzegowymi używanym w klasycznej metodzie Richardson-Lucy.
+
+## 0.104.2
+
+- Rozszerzono w PDF definicję liniowego splotu z zerowymi warunkami brzegowymi i jawnie powiązano zapis operatorowy z obliczeniową PSF.
+- Zdefiniowano parę dwuwymiarowej DFT dokładnie zgodnie z użyciem w SciPy i PyTorch (`norm="backward"`) oraz opisano twierdzenie o splocie kołowym i zawijanie na brzegach.
+- Przeniesiono informację o użyciu narzędzi LLM na koniec dokumentu PDF.
+
+## 0.104.1
+
+- Dodano do repozytorium i angielskiego PDF cztery dostarczone zrzuty GUI.
+- Zastąpiono miejsca na ilustracje ostatecznymi podpisami odnoszącymi się do rzeczywistych widoków.
+- Dodano klikalne odwołania do prac oryginalnych i klasycznych dotyczących opisanych metod numerycznych.
+- Wyjaśniono, które algorytmy hybrydowe i warianty stabilizacji są specyficzne dla tej implementacji.
+
+## 0.103.3
+
+## 0.104.0
+
+- Dodano publiczne API Pythona niezależne od Qt dla wszystkich zarejestrowanych algorytmów.
+- Dodano funkcje konwersji, generowania obrazu testowego i ruchowej PSF, zaburzania, zapisu oraz skrót do filtru Wienera.
+- Dodano kompletny samodzielny przykład Wienera z ukośną PSF ruchową.
+- Dodano dwujęzyczną dokumentację API i sekcję API w PDF.
+
+- Rozszerzono matematyczny i implementacyjny opis blokowej metody Kaczmarza.
+- Dodano miejsca na zrzuty ekranu oraz proponowany zestaw ilustracji z podpisami.
+- Dodano dwujęzyczne praktyczne wskazówki dotyczące metody Kaczmarza.
+- Poprawiono zgodność GitHub Actions z Pythonem 3.10 i opcjonalnymi testami PyTorch.
+
 # v103.2 - audyt tłumaczeń i informacja o użyciu AI
 
 - Sprawdzono teksty statyczne i dynamiczne GUI oraz uzupełniono brakujące polskie tłumaczenia.

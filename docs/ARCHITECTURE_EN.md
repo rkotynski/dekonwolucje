@@ -7,6 +7,8 @@
 - `deconv/optim/` — Auto tuning and the isolated numerical worker process.
 - `deconv/denoisers/` — optional neural-denoiser architectures and loading helpers.
 - `deconv/gui/` — GUI adapters, including translated Qt widgets.
+- `deconv/api.py` — stable Qt-independent entry points for scripts, notebooks, and batch jobs.
+- `examples/` — standalone programs using the public API.
 - `deconv/legacy_runtime.py` — stabilized Qt application state and tab implementation retained for backward compatibility.
 - `tests/` — numerical and process-level regression tests.
 - `docs/` — bilingual documentation.
@@ -41,6 +43,19 @@ All algorithms, Wiener initialization, blind-PSF initialization, reblur metrics 
 - `circular_fft`: circular convolution on the image grid, used by the explicit FFT/IFFT Wiener inverse.
 
 Fixed PSF spectra are cached. Torch operators use `float32` by default.
+
+## Block Kaczmarz implementation notes
+
+`deconv/algorithms/kaczmarz.py` implements an approximate block ART method on top of `NumpyLinearSameOperator`. The forward convolution is evaluated once per outer iteration. Selected observation-block residuals are accumulated with optional raised-Hann windows and normalized by block coverage. In the stabilized mode, one global adjoint correction is divided by the PSF energy. The legacy local mode applies block-local adjoint corrections and normalizes overlapping contributions. Shifted block starts, deterministic or random ordering, update clipping, damping, nonnegativity, TV, and denoising are separate controls. The implementation deliberately avoids materializing the convolution matrix and should not be described as an exact solution of block normal equations.
+
+
+## Public numerical API
+
+`deconv.api` is the supported integration layer outside the GUI. It converts NumPy arrays to `GrayImage`/`PSF`, exposes the canonical algorithm registry, merges default and user parameters, prepares the calculation-safe PSF, and returns the native `DeconvolutionResult`. It imports no Qt modules.
+
+The stable functions are `run_deconvolution`, `wiener_filter`, `available_algorithms`, `default_parameters`, `generate_test_image`, `generate_motion_psf`, `disturb_image`, `as_gray_image`, `as_psf`, and `save_grayscale`. GUI state and `legacy_runtime.py` are not public numerical APIs.
+
+See `docs/API_EN.md` and `examples/wiener_motion_blur.py`.
 
 ## Adding an algorithm
 

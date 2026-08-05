@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
 from pathlib import Path
 
 
@@ -16,6 +19,10 @@ def test_pyproject_metadata_and_entry_points():
     assert (root / "LICENSE").exists()
     assert (root / "docs" / "USER_GUIDE_EN.md").exists()
     assert (root / "docs" / "USER_GUIDE_PL.md").exists()
+    assert (root / "docs" / "screenshots" / "README.md").exists()
+    assert (root / "docs" / "API_EN.md").exists()
+    assert (root / "docs" / "API_PL.md").exists()
+    assert (root / "examples" / "wiener_motion_blur.py").exists()
 
 
 def test_english_pdf_documentation_is_packaged():
@@ -33,3 +40,7 @@ def test_pdf_source_has_no_named_author_and_contains_ai_disclosure():
     assert "pdfauthor={}" in tex
     assert "AI-assisted development disclosure" in tex
     assert "large language models (LLMs)" in tex
+    assert "Relation to the classical Kaczmarz method" in tex
+    assert "03-kaczmarz-settings.png" in tex
+    assert "Python API" in tex
+    assert "wiener_motion_blur.py" in tex

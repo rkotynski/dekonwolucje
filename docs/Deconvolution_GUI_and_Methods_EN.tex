@@ -16,7 +16,7 @@
  pdftitle={Deconvolution GUI: Program Description and Numerical Methods},
  pdfauthor={},pdfsubject={Documentation of the dekonwolucje software},
  pdfkeywords={deconvolution, PSF, Wiener, Richardson-Lucy, blind deconvolution, PyTorch, CUDA}}
-\pagestyle{fancy}\fancyhf{}\lhead{Deconvolution GUI}\rhead{Version 0.103.2}\cfoot{\thepage\ / \pageref{LastPage}}
+\pagestyle{fancy}\fancyhf{}\lhead{Deconvolution GUI}\rhead{Version 0.104.3}\cfoot{\thepage\ / \pageref{LastPage}}
 \titleformat{\section}{\Large\bfseries\color{uwblue}}{\thesection}{0.7em}{}
 \titleformat{\subsection}{\large\bfseries\color{uwblue}}{\thesubsection}{0.7em}{}
 \setlist{nosep,leftmargin=1.6em}\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}\renewcommand{\arraystretch}{1.18}
@@ -24,11 +24,27 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\calF}{\mathcal{F}}
 \newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\doilink}[1]{\href{https://doi.org/#1}{doi:\nolinkurl{#1}}}
 \newcommand{\boxnote}[1]{\begin{center}\fcolorbox{uwblue!55}{softblue}{\begin{minipage}{0.92\linewidth}#1\end{minipage}}\end{center}}
+\newcommand{\screenshotfigure}[3]{%
+\begin{figure}[H]\centering
+\IfFileExists{screenshots/#1}{%
+  \includegraphics[width=#2\linewidth]{screenshots/#1}%
+}{%
+  \fcolorbox{uwblue!55}{black!2}{%
+    \begin{minipage}[c][0.23\textheight][c]{#2\linewidth}
+      \centering\Large\color{uwblue!75}\textbf{Screenshot placeholder}\\[3mm]
+      \normalsize\color{black!70}Add \code{docs/screenshots/#1} and rebuild the PDF.
+    \end{minipage}%
+  }%
+}%
+\caption{#3}
+\end{figure}%
+}
 \begin{document}
 \begin{titlepage}\thispagestyle{empty}\centering
 \vspace*{18mm}{\Huge\bfseries\color{uwblue} Deconvolution GUI\par}\vspace{4mm}
-{\LARGE Program Description and Numerical Methods\par}\vspace{13mm}{\Large Version 0.103.2\par}
+{\LARGE Program Description and Numerical Methods\par}\vspace{13mm}{\Large Version 0.104.3\par}
 \vfill\vspace{8mm}{\large \url{https://github.com/rkotynski/dekonwolucje}\par}\vfill
 \begin{minipage}{0.86\textwidth}\small
 This document describes the graphical workflow, numerical data model, convolution operators, implemented deconvolution methods, quality criteria, automatic parameter tuning, and software architecture of the \code{dekonwolucje} project. The software is distributed under the MIT License. Source-code comments and internal identifiers remain in English independently of the selected English or Polish GUI language.
@@ -41,24 +57,73 @@ The program is a desktop research application for restoration of grayscale image
 
 The same committed calculation image and calculation PSF are used by all algorithms, synthetic degradation, reblur metrics, and blind-PSF initialization. NumPy/SciPy methods and PyTorch variants are available. PyTorch uses \code{float32} by default and can use CUDA when requested and available.
 
-\subsection{AI-assisted development disclosure}
-Parts of the software and documentation were prepared with assistance from tools based on large language models (LLMs). Their suggestions were incorporated as part of the development process. This assistance does not replace independent verification: numerical methods, implementation details, parameter choices, and reconstructed results should be validated for the intended scientific application.
-
 \section{Forward model and boundary conditions}
-Let $f$ be the unknown image, $h$ the PSF, $g$ the measured image, and $n$ additive noise. The discrete model is
+Let $f[m,n]$, $0\leq m<M$, $0\leq n<N$, be the unknown image, let $h[u,v]$, $0\leq u<M_h$, $0\leq v<N_h$, be the calculation PSF, let $g$ be the measured image, and let $n$ denote additive noise. The committed PSF is nonnegative and normalized so that $\sum_{u,v}h[u,v]=1$.
+
+For clarity, $*$ denotes convolution rather than pointwise multiplication. The full zero-boundary linear convolution used by the program is defined by
+\[
+(h*_{\rm lin} f)[r,s]
+=\sum_{u=0}^{M_h-1}\sum_{v=0}^{N_h-1}
+ h[u,v] \,\widetilde f[r-u,s-v],
+\]
+where $\widetilde f[a,b]=f[a,b]$ inside the image and $\widetilde f[a,b]=0$ outside it. Its full result has size $(M+M_h-1)\times(N+N_h-1)$. The default image-sized forward operator is the centered \emph{same} crop
+\[
+\mathcal H_{\rm lin}f=C_{\rm same}(h*_{\rm lin}f),\qquad
+(C_{\rm same}y)[m,n]=y[m+s_y,n+s_x],
+\]
+with $s_y=\lfloor(M_h-1)/2\rfloor$ and $s_x=\lfloor(N_h-1)/2\rfloor$. This is the convention of \code{scipy.signal.fftconvolve(..., mode="same")}; it is symmetric for odd kernels and intentionally one-sample asymmetric for even kernels.
+
+The compact notation $\mathcal H f$ therefore means ``convolve $f$ with the PSF $h$ using the boundary and cropping convention assigned to $\mathcal H$''. It is matrix--vector notation for a linear operator, not a pointwise product. The discrete observation model is
 \begin{equation}g=\mathcal{H}f+n.\end{equation}
-The project deliberately distinguishes two operators.
+The project deliberately distinguishes two choices of $\mathcal H$.
 
 \subsection{Zero-boundary linear convolution}
-Most iterative methods and synthetic degradation use linear convolution with zero values outside the image, followed by the exact centered \emph{same} crop. The full FFT canvas has size
+Most iterative methods and synthetic disturbance generation use $\mathcal H=\mathcal H_{\rm lin}$ as defined above. The FFT implementation evaluates the full linear convolution on a canvas of size
 \begin{equation}(M+M_h-1)\times(N+N_h-1).\end{equation}
-The corresponding adjoint $\mathcal{H}_{\rm lin}^{*}$ is the transpose of this exact cropped operator, including the asymmetric convention needed for even kernels.
+The discrete complex inner product used here is
+\[
+\langle x,y\rangle=\sum_{m,n}\overline{x[m,n]}\,y[m,n].
+\]
+The adjoint $\mathcal{H}^{*}$ is defined by
+\[
+\langle\mathcal{H}x,y\rangle=\langle x,\mathcal{H}^{*}y\rangle.
+\]
+If $A$ is the matrix representation of $\mathcal H$, then $\mathcal H^{*}$ is represented by the Hermitian transpose $A^{*}=\overline{A}^{\mathsf T}$. Because the spatial PSF and the crop/embedding operations used here are real, this reduces to the ordinary transpose $A^{\mathsf T}$, but it is still the adjoint of the complete forward operator, not merely the elementwise conjugate of the PSF samples. The corresponding adjoint $\mathcal{H}_{\rm lin}^{*}$ is therefore the transpose of the exact zero-boundary convolution followed by the centered crop, including the asymmetric convention needed for even kernels.
 
 \subsection{Circular FFT model}
-The closed-form Wiener inverse uses circular convolution because the operator is diagonal in the discrete Fourier basis. With
+The closed-form Wiener inverse uses circular convolution because this operator is diagonal in the two-dimensional discrete Fourier basis. NumPy/SciPy and PyTorch are used with their default \code{norm="backward"} convention. For an $M\times N$ array $x$, the transform pair is
+\begin{align*}
+X[k,\ell]=\calF_{M,N}\{x\}[k,\ell]
+&=\sum_{m=0}^{M-1}\sum_{n=0}^{N-1}
+ x[m,n]\exp\!\left[-2\pi i\left(\frac{km}{M}+\frac{\ell n}{N}\right)\right],\\
+x[m,n]=\calF_{M,N}^{-1}\{X\}[m,n]
+&=\frac{1}{MN}\sum_{k=0}^{M-1}\sum_{\ell=0}^{N-1}
+ X[k,\ell]\exp\!\left[2\pi i\left(\frac{km}{M}+\frac{\ell n}{N}\right)\right].
+\end{align*}
+Thus the forward DFT is unnormalized and the factor $1/(MN)$ occurs only in the inverse DFT. With this pair, neither linear nor circular convolution needs an extra numerical scale factor. In particular, if $P=M+M_h-1$, $Q=N+N_h-1$, and $f_{P,Q}$ and $h_{P,Q}$ are the two arrays zero-padded to the full linear-convolution canvas, then
+\[
+h*_{\rm lin}f
+=\calF_{P,Q}^{-1}\!\left\{\calF_{P,Q}\{h_{P,Q}\}\,\calF_{P,Q}\{f_{P,Q}\}\right\}.
+\]
+The implementation may use the equivalent real-input pair \code{rfft2}/\code{irfft2}; it has the same normalization.
+
+To construct the circular PSF array $h_0$, the compact calculation PSF is zero-embedded in an $M\times N$ array and rolled by $-\lfloor M_h/2\rfloor$ and $-\lfloor N_h/2\rfloor$. This places the kernel-array index $(\lfloor M_h/2\rfloor,\lfloor N_h/2\rfloor)$ at the FFT origin, exactly as in the program. Circular convolution is then
+\[
+(h_0\circledast f)[m,n]
+=\sum_{u=0}^{M-1}\sum_{v=0}^{N-1}
+ h_0[u,v]f[(m-u)\bmod M,(n-v)\bmod N],
+\]
+and it satisfies $\calF\{h_0\circledast f\}=\calF\{h_0\}\,\calF\{f\}$. With
 \begin{equation}G=\calF\{g\},\qquad H=\calF\{h_0\},\end{equation}
-where the centered PSF is embedded on the image grid and shifted to the FFT origin,
+where $h_0$ is the zero-embedded, origin-shifted PSF array defined above. Here $H$ is an $M\times N$ array of complex Fourier coefficients, not the spatial-domain matrix representation of $\mathcal H$. For any complex array $Z$, the notation $Z^{*}$ means elementwise complex conjugation,
+\[
+Z^{*}[k,\ell]=\overline{Z[k,\ell]},\qquad |Z|^2=Z^{*}Z,
+\]
+where the final product is pointwise. Equivalently, if circular convolution is represented in the Fourier basis by the diagonal matrix $\operatorname{diag}(H)$, its Hermitian adjoint is $\operatorname{diag}(H^{*})$. Thus the spectral conjugate $H^{*}$ is the Fourier-domain representation of the adjoint circular-convolution operator; it should not be confused with taking only an elementwise conjugate of the full spatial operator matrix.
 \begin{equation}\mathcal{H}_{\rm circ}f=\operatorname{Re}\left\{\calF^{-1}[H\calF\{f\}]\right\}.\end{equation}
+The real part discards only the small imaginary round-off residual expected for real input arrays.
+
+Circular convolution wraps samples across opposite borders: signal leaving the right or lower edge re-enters at the left or upper edge. Zero-boundary linear convolution instead assumes no signal outside the image and discards the outer part when the \emph{same} crop is taken.
 \boxnote{Linear and circular boundary models are not identical. A Wiener result can differ near the borders from an iterative result even when both use the same numerical PSF.}
 
 \section{Committed calculation image and PSF}
@@ -92,8 +157,12 @@ Width and height are estimated independently, which is useful for motion blur or
 \subsection{Tab 1: image and PSF}
 The main actions are ordered as: \textbf{Load image}, \textbf{Load PSF}, \textbf{Generate test image}, \textbf{Generate selected PSF}, and \textbf{Generate degraded input}. Previews, histograms, and resolution labels describe the committed calculation data. If source image and PSF arrays have different dimensions, the smaller array is centered on a common zero-padded canvas; no resampling is performed by this synchronization.
 
+\screenshotfigure{01-gui-overview.png}{0.94}{Main application window. Tab 1 shows the committed calculation image and PSF, their 256-bin histograms and numerical resolutions; the open Language menu documents the English/Polish GUI selector.}
+
 \subsection{Tab 2: thresholds and calculation PSF}
 Two 256-bin histograms are located above the corresponding threshold controls. In full-array PSF preview, the area outside the committed rectangle is black because it is numerically zero. The compact preview shows the cropped, normalized kernel.
+
+\screenshotfigure{02-psf-preparation.png}{0.94}{Preparation of the calculation PSF in Tab 2. The upper controls contain the applied histograms and pending thresholds; the red rectangle in the full-array preview defines the support that will be thresholded, cropped and normalized after Apply.}
 
 \textbf{Optimize PSF floor + Wiener K} searches for a plausible PSF floor and Wiener regularization. With a reference image it minimizes reconstruction MSE. Without a reference, the floor is constrained by robust PSF-background statistics and GCV selects $K$ conditionally for each fixed PSF candidate. Kernels that collapse to a few samples or lose nearly all mass are rejected or penalized.
 
@@ -103,11 +172,16 @@ Tab 3 selects the reconstruction method and parameters. Optional Wiener initiali
 \subsection{Tab 4: results}
 All stored iterations are assessed in batches, using Torch/CUDA where practical. After reconstruction the best iteration is selected and \textbf{Auto levels} is applied. Black and white controls span the full normalized display interval, maintain a positive gap, and alter visualization only. Cached histograms provide approximate percentiles without repeated full-image sorting.
 
+\screenshotfigure{04-result-history.png}{0.94}{Iteration assessment in Tab 4 after a multi-iteration reconstruction. The selected frame, batch-computed quality criteria, display levels, reconstruction history and diagnostic log are visible.}
+
+\boxnote{References in the method sections point to original or classical sources where a clear source exists. Hybrid methods and stabilization choices specific to this program are explicitly identified as implementation-specific; citing their parent methods does not imply an exact reproduction of those publications.}
+
 \section{Wiener filtering}
-Every Wiener stage uses explicit FFT and inverse FFT operations. For scalar $K$ and optional normalized noise spectrum $N[k,l]$,
+Every Wiener stage uses explicit FFT and inverse FFT operations. The spectral minimum-mean-square-error construction follows the classical Wiener framework~\cite{Wiener1949}. For scalar $K$ and optional normalized noise spectrum $N[k,\ell]$,
 \begin{equation}
-\widehat F[k,l]=\frac{H^*[k,l]G[k,l]}{|H[k,l]|^2+K N[k,l]},
+\widehat F[k,\ell]=\frac{H^*[k,\ell]G[k,\ell]}{|H[k,\ell]|^2+K N[k,\ell]},
 \end{equation}
+In this equation, $H^*[k,\ell]=\overline{H[k,\ell]}$ is the elementwise complex conjugate of the PSF spectrum. It is also the diagonal Fourier-basis representation of the adjoint of circular convolution by $h_0$.
 followed by
 \begin{equation}\widehat f=\operatorname{Re}\{\calF^{-1}[\widehat F]\}.\end{equation}
 The obsolete magnitude-of-IFFT output was removed because it is nonlinear and converts negative ringing into positive intensity.
@@ -119,30 +193,66 @@ and a normalized cost of the form
 \begin{equation}
 \operatorname{GCV}(K)=\frac{\langle|R_HG_c|^2\rangle/\langle|G_c|^2\rangle}{\langle R_H\rangle^2},
 \end{equation}
-where $G_c$ is the spectrum of the mean-centered measured image. GCV selects $K$ for a fixed PSF; it is not used as unrestricted proof that a strongly thresholded PSF is physically correct.
+where $G_c$ is the spectrum of the mean-centered measured image. The parameter-selection principle is related to generalized cross-validation~\cite{Golub1979}. GCV selects $K$ for a fixed PSF; it is not used as unrestricted proof that a strongly thresholded PSF is physically correct.
 
 \section{Richardson--Lucy family}
 \subsection{Classical Richardson--Lucy}
 The multiplicative update is
 \begin{equation}
+\label{eq:rl-update}
 f^{(t+1)}=f^{(t)}\odot\mathcal{H}_{\rm lin}^{*}\left[\frac{g}{\mathcal{H}_{\rm lin}f^{(t)}+\varepsilon}\right].
 \end{equation}
-The implementation uses the exact adjoint of the zero-boundary linear \emph{same} operator. Initialization can be a constant image or a Wiener result. Nonnegativity, TV processing, and a neural denoiser can be applied.
+The update follows the independent formulations of Richardson and Lucy~\cite{Richardson1972,Lucy1974}. The implementation uses the exact adjoint of the zero-boundary linear \emph{same} operator. Initialization can be a constant image or a Wiener result. Nonnegativity, TV processing, and a neural denoiser can be applied.
 
 \subsection{Richardson--Lucy--Wiener}
-This experimental hybrid performs an RL update and then a Wiener operation in every iteration. It combines multiplicative data correction with frequency-domain regularization controlled by $K$.
+This experimental hybrid performs an RL update and then a Wiener operation in every iteration. It combines the parent Richardson--Lucy and Wiener methods~\cite{Richardson1972,Lucy1974,Wiener1949}; it is a program-specific hybrid rather than a reproduction of a single original algorithm.
 
 \subsection{Richardson--Lucy--Rosen}
-The Rosen variant replaces ordinary back-projection by nonlinear spectral correlation
+The implementation keeps the Richardson--Lucy forward prediction and ratio, but replaces the adjoint back-projection factor in Eq.~\eqref{eq:rl-update}. At iteration $t$ it first evaluates
+\[
+r^{(t)}=\frac{g}{\mathcal H_{\rm lin}f^{(t)}+\varepsilon},
+\qquad R^{(t)}=\calF\{r^{(t)}\}.
+\]
+The compact PSF is embedded and shifted to the FFT origin on the image-sized grid, producing $h_0$ and its spectrum $H=\calF\{h_0\}$. Equation~\eqref{eq:rosen-spectrum} is then used with $F_1=R^{(t)}$ and $F_2=H$:
 \begin{equation}
-C_{L,M}=(|F_1|+\varepsilon)^L(|F_2|+\varepsilon)^M
-\exp[i(\arg F_1-\arg F_2)].
+\label{eq:rosen-spectrum}
+C_{L,M}^{(t)}=(|R^{(t)}|+\varepsilon)^L(|H|+\varepsilon)^M
+\exp\!\left[i\left(\arg R^{(t)}-\arg H\right)\right].
 \end{equation}
-Smaller exponents emphasize phase. An optional relaxation moves $L$ and $M$ toward one during the iteration.
+The inverse transform gives a real spatial correlation map,
+\[
+c_{L,M}^{(t)}=\operatorname{Re}\!\left\{\calF^{-1}\!\left[C_{L,M}^{(t)}\right]\right\}.
+\]
+The code then applies a global offset removal and peak normalization,
+\[
+b_{L,M}^{(t)}=
+\frac{c_{L,M}^{(t)}-\min c_{L,M}^{(t)}}
+{\max\!\left(\max(c_{L,M}^{(t)}-\min c_{L,M}^{(t)}),\varepsilon\right)},
+\]
+and replaces the classical factor $\mathcal H_{\rm lin}^{*}r^{(t)}$ in Eq.~\eqref{eq:rl-update} by $b_{L,M}^{(t)}$. The actual multiplicative step is therefore
+\[
+f^{(t+1)}=f^{(t)}\odot\left(b_{L,M}^{(t)}+\varepsilon\right),
+\]
+followed, when enabled, by TV processing, neural denoising, and projection onto the nonnegative cone.
+
+Ignoring $\varepsilon$ and the spatial min--max normalization, the special case $L=M=1$ gives
+\[
+C_{1,1}^{(t)}=|R^{(t)}||H|
+\exp\!\left[i(\arg R^{(t)}-\arg H)\right]
+=R^{(t)}H^{*}.
+\]
+Thus it reduces to ordinary circular cross-correlation of the Richardson--Lucy ratio with the PSF. It is nevertheless \emph{not exactly identical} to the classical update in Eq.~\eqref{eq:rl-update}: the latter uses the exact adjoint of the zero-boundary linear \emph{same} operator, whereas the Rosen correction uses image-sized circular FFT correlation and is subsequently offset and normalized to the interval $[0,1]$. Consequently, the GUI preset $L=M=1$ aligns the nonlinear exponents with ordinary correlation, but does not remove these boundary-model and normalization differences.
+
+Values $L,M<1$ compress spectral magnitudes and increase the relative influence of phase. If relaxation toward one is enabled, the exponents are updated after each completed iteration according to
+\[
+L_{t+1}=\rho L_t+(1-\rho),\qquad
+M_{t+1}=\rho M_t+(1-\rho),\qquad 0\leq\rho\leq1,
+\]
+so they approach one for $\rho<1$. The construction is inspired by nonlinear reconstruction and the Lucy--Richardson--Rosen literature~\cite{Smith2022,Anand2022}; the exact circular correlation, min--max normalization, and relaxation controls are implementation-specific.
 
 \section{Landweber, Kaczmarz, and Adam methods}
 \subsection{Landweber}
-The classical update is gradient descent on the least-squares data term:
+The classical update is gradient descent on the least-squares data term, following Landweber's iteration for first-kind integral equations~\cite{Landweber1951}:
 \begin{equation}
 f^{(t+1)}=f^{(t)}+\alpha\mathcal{H}_{\rm lin}^{*}(g-\mathcal{H}_{\rm lin}f^{(t)}).
 \end{equation}
@@ -153,24 +263,104 @@ The Wiener-preconditioned version transforms the adjoint residual $d$ as
 and applies $f^{(t+1)}=f^{(t)}+\alpha\widetilde d$.
 
 \subsection{Block Kaczmarz}
-The block Kaczmarz implementation is an experimental ART-style method. Rectangular observation blocks are visited, local residuals are back-projected, and relaxed corrections are applied to the corresponding reconstruction regions. It avoids explicit construction of the very large convolution matrix.
+\subsubsection*{Relation to the classical Kaczmarz method}
+Writing the linear deconvolution problem as $Af=g$, the classical row-action method introduced by Kaczmarz~\cite{Kaczmarz1937} updates one equation at a time. For row $a_i^{\mathsf T}$ it is
+\begin{equation}
+f^{(j+1)}=f^{(j)}+\omega\,
+\frac{g_i-a_i^{\mathsf T}f^{(j)}}{\norm{a_i}_2^2}\,a_i,
+\end{equation}
+where $\omega$ is a relaxation factor. The update is an orthogonal projection for $\omega=1$ and an under- or over-relaxed projection otherwise. A formal block version using a group of rows $A_B$ is
+\begin{equation}
+f^{+}=f+\omega A_B^{\mathsf T}
+\left(A_BA_B^{\mathsf T}+\eta I\right)^{-1}(g_B-A_Bf),
+\end{equation}
+with optional stabilization $\eta\geq0$. For an image convolution problem, however, explicitly storing $A$ or repeatedly solving the block normal equations is expensive.
+
+\subsubsection*{Approximate ART-style implementation used in the program}
+The implemented method is therefore an \emph{approximate block Kaczmarz/ART scheme}, not an exact algebraic block projection. Its blockwise image-reconstruction interpretation is related to algebraic reconstruction techniques (ART)~\cite{Gordon1970}. Let $\mathcal H_{\rm lin}$ be the zero-boundary linear convolution operator and let $P_b$ select an observation block. At the start of each outer iteration the blurred estimate is evaluated once,
+\begin{equation}y=\mathcal H_{\rm lin}f.
+\end{equation}
+For every selected block $b$, the local residual is
+\begin{equation}r_b=P_b(g-y).
+\end{equation}
+A separable smooth window $W_b$ may be applied to reduce seams. The code uses a raised Hann window whose one-dimensional weights are $0.25+0.75w_{\rm Hann}$, so boundary samples retain nonzero weight.
+
+In the default stabilized full-sweep mode, all selected residual blocks are accumulated on the observation grid and divided pointwise by their accumulated coverage:
+\begin{equation}
+\widetilde r=
+\frac{\sum_{b\in\mathcal B}P_b^{\mathsf T}(W_b\odot r_b)}
+{\sum_{b\in\mathcal B}P_b^{\mathsf T}W_b},
+\end{equation}
+where division is performed only where the denominator is positive. One global adjoint correction is then formed,
+\begin{equation}
+\Delta f=\omega\,
+\frac{\mathcal H_{\rm lin}^{*}\widetilde r}
+{\max(\sum_{u,v}h[u,v]^2,\varepsilon)}.
+\end{equation}
+This coverage-normalized sweep retains the row-action idea---only selected observation blocks contribute---while suppressing brightness jumps and periodic block-grid artifacts that arose when every local correction was applied independently.
+
+The optional legacy mode back-projects each block separately and retains only the corresponding reconstruction block. Overlapping contributions are normalized by the squared smooth-window weights. It is useful mainly for comparison because it is more sensitive to block boundaries.
+
+\subsubsection*{Block geometry and ordering}
+The current implementation uses square observation blocks of side $B$. Without overlap the stride is $B$; with overlap it is $\max(1,\lfloor B/2\rfloor)$. Boundary starts are always included, so the complete image is covered. The user can choose:
+\begin{itemize}
+\item a full sweep over every block or only a specified number of blocks per outer iteration;
+\item deterministic cyclic order or a reproducible randomized order;
+\item overlapping or non-overlapping blocks;
+\item a shifted block lattice between full sweeps, which changes the block boundaries and reduces stationary grid artifacts;
+\item smooth block weighting or uniform weights.
+\end{itemize}
+
+\subsubsection*{Stability controls and optional processing}
+Before application, the raw update can be clipped relative to the current signal scale,
+\begin{equation}
+s=\max\left(Q_{0.99}(|f|),Q_{0.99}(|g|),10^{-6}\right),\qquad
+\Delta f\leftarrow\operatorname{clip}(\Delta f,-\rho s,\rho s),
+\end{equation}
+where $\rho$ is the maximum update fraction. A damping parameter $\beta\in[0,1]$ then gives
+\begin{equation}
+f^{+}=(1-\beta)f+\beta(f+\Delta f).
+\end{equation}
+The estimate may subsequently be projected onto nonnegative values and passed through the optional TV preconditioner or neural denoiser. Wiener initialization is also available when explicitly enabled.
+
+\begin{table}[H]\centering\small
+\begin{tabularx}{0.97\linewidth}{>{\raggedright\arraybackslash}p{0.31\linewidth}X}
+\toprule\textbf{GUI parameter}&\textbf{Numerical role}\\\midrule
+Kaczmarz relaxation&$\omega$, scale of the adjoint residual correction.\\
+Kaczmarz block size&Side length $B$ of square observation blocks.\\
+Blocks per iteration&Number of blocks used when full sweep is disabled.\\
+Full sweep&Visits all blocks in every outer iteration.\\
+Overlapping blocks&Uses approximately 50\% overlap in each direction.\\
+Randomized blocks&Visits a random subset/order instead of deterministic cycling.\\
+Shifted grid&Moves block boundaries between full sweeps.\\
+Smooth block window&Applies raised-Hann weights to reduce seams.\\
+Stabilized sweep&Combines coverage-normalized residuals before one global adjoint update.\\
+Update damping&$\beta$, interpolation between the old and proposed estimate.\\
+Max update fraction&$\rho$, clips an excessively large outer-iteration correction.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The method is most useful when blockwise data access, artifact diagnosis, or comparison with ART-style reconstruction is of interest. It should not be interpreted as an exact solution of the block projection equations, and its parameters are coupled: increasing overlap or the number of visited blocks generally requires reconsidering relaxation, damping, and the update limit.
+
+\screenshotfigure{03-kaczmarz-settings.png}{0.94}{Block Kaczmarz controls in Tab 3: block geometry, sweep and ordering options, shifted grid, smooth window, stabilized update, damping and clipping parameters.}
 
 \subsection{PyTorch Adam TV-MAP}
 The non-blind Adam method minimizes
 \begin{equation}J(f)=\frac12\norm{\mathcal{H}_{\rm lin}f-g}_2^2+\lambda_f\operatorname{TV}(f)
 \end{equation}
-with automatic differentiation. Candidate parameter sets can be processed in batches. Nonnegativity is enforced by projection when selected.
+with automatic differentiation. The TV prior follows the edge-preserving Rudin--Osher--Fatemi model~\cite{Rudin1992}, while parameter updates use Adam~\cite{Kingma2015}. Candidate parameter sets can be processed in batches. Nonnegativity is enforced by projection when selected.
 
 \section{Blind deconvolution}
 \subsection{Blind Richardson--Lucy}
-Blind RL alternates the image update with a PSF update obtained from correlation of the current image estimate and the relative-blur ratio. The PSF is cropped to the Tab-2 dimensions, projected to nonnegative values, and normalized after each update. Initialization can use the current calculation PSF or a rectangular Gaussian. Optional rotational projection imposes symmetry.
+Blind RL alternates the image update with a PSF update obtained from correlation of the current image estimate and the relative-blur ratio. Alternating Richardson--Lucy blind deconvolution was described by Fish \emph{et al.}~\cite{Fish1995}. The PSF is cropped to the Tab-2 dimensions, projected to nonnegative values, and normalized after each update. Initialization can use the current calculation PSF or a rectangular Gaussian. Optional rotational projection imposes symmetry.
 
 \subsection{Blind Adam TV-MAP}
 The blind PyTorch method jointly minimizes
 \begin{equation}
 J(f,h)=\frac12\norm{h*f-g}_2^2+\lambda_f\operatorname{TV}(f)+\lambda_h\operatorname{TV}(h).
 \end{equation}
-After every Adam step the PSF is projected onto $h\geq0$ and $\sum h=1$, with optional rotational symmetry. Separate learning rates are used for image and PSF.
+After every Adam step the PSF is projected onto $h\geq0$ and $\sum h=1$, with optional rotational symmetry. Separate learning rates are used for image and PSF. This is an implementation-specific joint MAP construction built from the TV and Adam components~\cite{Rudin1992,Kingma2015}, rather than a reproduction of one canonical blind-deconvolution paper.
 
 \boxnote{Blind deconvolution is intrinsically non-unique. PSF width, image sharpness, noise, regularization, initialization, and stopping iteration can compensate for one another.}
 
@@ -186,6 +376,75 @@ Auto evaluates parameter candidates, using batched implementations when possible
 
 \section{Batch processing and CUDA}
 PyTorch variants operate on stacks of candidates where possible. The key choices are: default \code{float32}; cached spectra for fixed PSFs; differentiable FFT convolution for changing PSFs; memory-limited chunking; grouping of blind-history frames by PSF shape; and CPU fallback when CUDA is unavailable or memory allocation fails. GPU acceleration is most useful for large images, many iterations, and candidate batches.
+
+
+\section{Python API and use without the GUI}
+The numerical implementation can be reused from scripts, notebooks, batch jobs, and other applications without constructing Qt widgets.  The supported integration layer is \code{deconv.api}; it imports the core data models and algorithm registry, but does not import PyQt5 or \code{legacy\_runtime.py}.  Canonical English algorithm identifiers are used independently of the selected GUI language.
+
+\subsection{Public objects and functions}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.34\textwidth}>{\raggedright\arraybackslash}p{0.58\textwidth}}
+\toprule\textbf{Object or function}&\textbf{Purpose}\\\midrule\endfirsthead
+\toprule\textbf{Object or function}&\textbf{Purpose}\\\midrule\endhead
+\code{GrayImage}&Two-dimensional grayscale image; numerical values are stored in \code{data}.\\
+\code{PSF}&Non-negative unit-sum point-spread function; the calculation kernel is stored in \code{kernel}.\\
+\code{DeconvolutionResult}&Native result containing the final image, iteration history, metrics, and a textual summary.\\
+\code{as\_gray\_image}, \code{as\_psf}&Convert two-dimensional NumPy arrays to validated data models.\\
+\code{generate\_test\_image}&Create the same synthetic test image as the GUI.\\
+\code{generate\_motion\_psf}&Create a horizontal or oblique normalized motion PSF.\\
+\code{disturb\_image}&Apply the zero-boundary linear forward model and optional reproducible noise.\\
+\code{available\_algorithms}&List canonical names accepted by the registry.\\
+\code{default\_parameters}&Return an independent copy of one algorithm's default parameters.\\
+\code{run\_deconvolution}&Run any registered algorithm with merged default and user parameters.\\
+\code{wiener\_filter}&Convenience wrapper for the explicit FFT/IFFT Wiener implementation.\\
+\code{save\_grayscale}&Save a model or array as an 8-bit grayscale image.\\\bottomrule
+\end{longtable}
+
+A general call returns the native result object:
+\begin{lstlisting}[language=Python]
+from deconv.api import run_deconvolution
+
+result = run_deconvolution(
+    measured_array,             # two-dimensional values in [0, 1]
+    psf_array,                  # non-negative two-dimensional kernel
+    algorithm="Richardson-Lucy",
+    iterations=40,
+    epsilon=1e-8,
+)
+restored = result.image.data
+history = [frame.data for frame in result.history]
+\end{lstlisting}
+Arrays passed with the default \code{normalize\_image=False} must already lie in $[0,1]$; this avoids silent contrast stretching in quantitative workflows.  Setting \code{normalize\_image=True} requests min--max normalization.  A supplied PSF is projected to non-negative values and normalized to unit sum.  The same calculation-safe PSF preparation is used as in the GUI.
+
+\subsection{Standalone Wiener example}
+The repository contains \code{examples/wiener\_motion\_blur.py}.  It generates the standard test image, a $31\times31$ motion PSF rotated by $35^\circ$, a disturbed image with reproducible Gaussian noise, and a Wiener reconstruction:
+\begin{lstlisting}[language=Python]
+from deconv.api import (
+    generate_test_image, generate_motion_psf,
+    disturb_image, wiener_filter,
+)
+
+reference = generate_test_image(width=384, height=256)
+psf = generate_motion_psf(size=31, angle_deg=35.0)
+disturbed = disturb_image(
+    reference, psf, noise_sigma=0.01, seed=7
+)
+result = wiener_filter(
+    disturbed, psf, K=2.0e-3, non_negative=True
+)
+restored = result.image.data
+\end{lstlisting}
+The complete program also saves individual PNG files and the comparison shown in Fig.~\ref{fig:api-wiener-example}.  It can be run with
+\begin{lstlisting}[language=bash]
+python examples/wiener_motion_blur.py \
+  --output-dir wiener_motion_output
+\end{lstlisting}
+\begin{figure}[H]\centering
+\includegraphics[width=0.98\linewidth]{examples/wiener_motion_comparison.png}
+\caption{Output of the standalone API example: reference image, oblique motion PSF, disturbed input, and Wiener reconstruction.}\label{fig:api-wiener-example}
+\end{figure}
+
+\subsection{Advanced execution hooks}
+Iterative methods accept \code{\_iteration\_callback} and \code{\_stop\_event}.  The callback receives the current and total iteration numbers; a set event requests cooperative stopping after the current iteration.  These underscored names are advanced execution hooks and may evolve more readily than the main API.  GUI classes and application-state objects are deliberately excluded from the public numerical API.
 
 \section{Software architecture}
 \begin{figure}[H]\centering
@@ -241,6 +500,47 @@ python -m pytest
 \end{lstlisting}
 To add a method, derive from the common algorithm interface, use shared data and operators, register the method, add canonical English controls and Polish translations, and add numerical and smoke tests.
 
+
+\clearpage
+\section{Selected primary and classical references}
+\begin{thebibliography}{99}
+\bibitem{Wiener1949}
+N. Wiener, \emph{Extrapolation, Interpolation, and Smoothing of Stationary Time Series: With Engineering Applications}, Technology Press of MIT and Wiley, 1949. \doilink{10.7551/mitpress/2946.001.0001}.
+
+\bibitem{Golub1979}
+G. H. Golub, M. Heath, and G. Wahba, ``Generalized Cross-Validation as a Method for Choosing a Good Ridge Parameter,'' \emph{Technometrics} \textbf{21}, 215--223 (1979). \doilink{10.1080/00401706.1979.10489751}.
+
+\bibitem{Richardson1972}
+W. H. Richardson, ``Bayesian-Based Iterative Method of Image Restoration,'' \emph{Journal of the Optical Society of America} \textbf{62}, 55--59 (1972). \doilink{10.1364/JOSA.62.000055}.
+
+\bibitem{Lucy1974}
+L. B. Lucy, ``An iterative technique for the rectification of observed distributions,'' \emph{The Astronomical Journal} \textbf{79}, 745--754 (1974). \doilink{10.1086/111605}.
+
+\bibitem{Landweber1951}
+L. Landweber, ``An Iteration Formula for Fredholm Integral Equations of the First Kind,'' \emph{American Journal of Mathematics} \textbf{73}, 615--624 (1951). \doilink{10.2307/2372313}.
+
+\bibitem{Kaczmarz1937}
+S. Kaczmarz, ``Angen\"aherte Aufl\"osung von Systemen linearer Gleichungen,'' \emph{Bulletin International de l'Acad\'emie Polonaise des Sciences et des Lettres, Classe des Sciences Math\'ematiques et Naturelles, S\'erie A} \textbf{35}, 355--357 (1937). An English translation is available at \url{https://faculty.sites.iastate.edu/esweber/files/inline-files/kaczmarz_english_translation_1937.pdf}.
+
+\bibitem{Gordon1970}
+R. Gordon, R. Bender, and G. T. Herman, ``Algebraic Reconstruction Techniques (ART) for three-dimensional electron microscopy and x-ray photography,'' \emph{Journal of Theoretical Biology} \textbf{29}, 471--481 (1970). \doilink{10.1016/0022-5193(70)90109-8}.
+
+\bibitem{Rudin1992}
+L. I. Rudin, S. Osher, and E. Fatemi, ``Nonlinear total variation based noise removal algorithms,'' \emph{Physica D: Nonlinear Phenomena} \textbf{60}, 259--268 (1992). \doilink{10.1016/0167-2789(92)90242-F}.
+
+\bibitem{Kingma2015}
+D. P. Kingma and J. Ba, ``Adam: A Method for Stochastic Optimization,'' in \emph{International Conference on Learning Representations} (2015), \url{https://arxiv.org/abs/1412.6980}.
+
+\bibitem{Fish1995}
+D. A. Fish, A. M. Brinicombe, E. R. Pike, and J. G. Walker, ``Blind deconvolution by means of the Richardson--Lucy algorithm,'' \emph{Journal of the Optical Society of America A} \textbf{12}, 58--65 (1995). \doilink{10.1364/JOSAA.12.000058}.
+
+\bibitem{Smith2022}
+D. Smith \emph{et al.}, ``Nonlinear Reconstruction of Images from Patterns Generated by Deterministic or Random Optical Masks---Concepts and Review of Research,'' \emph{Journal of Imaging} \textbf{8}, 174 (2022). \doilink{10.3390/jimaging8060174}.
+
+\bibitem{Anand2022}
+V. Anand \emph{et al.}, ``Single-shot mid-infrared incoherent holography using Lucy--Richardson--Rosen algorithm,'' \emph{Opto-Electronic Science} \textbf{1}, 210006 (2022). \doilink{10.29026/oes.2022.210006}.
+\end{thebibliography}
+
 \section{Limitations and interpretation}
 \begin{itemize}
 \item Wiener uses a circular model, while most iterative methods use zero-boundary linear convolution.
@@ -253,5 +553,9 @@ To add a method, derive from the common algorithm interface, use shared data and
 \section{License and project information}
 The project is distributed under the MIT License.\\
 \textbf{Homepage:} \url{https://github.com/rkotynski/dekonwolucje}
-\vfill\begin{center}\small Document generated for software version 0.103.2. The source code is authoritative if implementation details change in later releases.\end{center}
+
+\section{AI-assisted development disclosure}
+Parts of the software and documentation were prepared with assistance from tools based on large language models (LLMs). Their suggestions were incorporated as part of the development process. This assistance does not replace independent verification: numerical methods, implementation details, parameter choices, and reconstructed results should be validated for the intended scientific application.
+
+\vfill\begin{center}\small Document generated for software version 0.104.3. The source code is authoritative if implementation details change in later releases.\end{center}
 \end{document}

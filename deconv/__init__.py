@@ -1,7 +1,36 @@
-"""Modular deconvolution research GUI package.
+"""GUI and reusable Python API for grayscale image deconvolution."""
 
-This package is a refactoring wrapper around the stabilized runtime. Public
-classes are re-exported through focused modules so new code can evolve without
-adding more logic to a single monolithic script.
-"""
-__version__ = "0.103.2"
+__version__ = "0.104.3"
+
+from .api import (
+    DeconvolutionResult,
+    GrayImage,
+    PSF,
+    as_gray_image,
+    as_psf,
+    available_algorithms,
+    default_parameters,
+    disturb_image,
+    generate_motion_psf,
+    generate_test_image,
+    run_deconvolution,
+    save_grayscale,
+    wiener_filter,
+)
+
+__all__ = [
+    "__version__",
+    "DeconvolutionResult",
+    "GrayImage",
+    "PSF",
+    "as_gray_image",
+    "as_psf",
+    "available_algorithms",
+    "default_parameters",
+    "disturb_image",
+    "generate_motion_psf",
+    "generate_test_image",
+    "run_deconvolution",
+    "save_grayscale",
+    "wiener_filter",
+]

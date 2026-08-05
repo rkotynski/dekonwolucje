@@ -1017,6 +1017,7 @@ def degrade_image(
     psf: PSF,
     noise_sigma: float = 0.01,
     noise_type: str = "Gaussian",
+    rng: Optional[np.random.Generator] = None,
 ) -> GrayImage:
     """Blur an image with a PSF and add one of the supported noise models.
 
@@ -1032,7 +1033,7 @@ def degrade_image(
 
     sigma = max(0.0, float(noise_sigma))
     mode = str(noise_type or "Gaussian").strip().lower()
-    rng = np.random.default_rng()
+    rng = np.random.default_rng() if rng is None else rng
 
     noise_field = np.zeros_like(blurred, dtype=np.float64)
     if sigma <= 0.0:

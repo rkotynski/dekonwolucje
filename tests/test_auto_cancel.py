@@ -4,8 +4,9 @@ import threading
 import time
 
 import numpy as np
+import pytest
 
-from deconv.core.runtime import GrayImage, PSF
+from deconv.core.runtime import TORCH_AVAILABLE, GrayImage, PSF
 from deconv.optim.auto_process import AutoCancelledError, AutoNumericalProcessClient
 
 
@@ -66,6 +67,7 @@ def test_isolated_auto_process_scores_a_wiener_candidate():
         client.close()
 
 
+@pytest.mark.skipif(not TORCH_AVAILABLE, reason="PyTorch is an optional dependency")
 def test_isolated_auto_process_scores_a_small_batched_rl_search():
     reference_data = np.zeros((24, 24), dtype=np.float64)
     reference_data[8:16, 9:15] = 1.0

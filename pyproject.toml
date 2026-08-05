@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dekonwolucje"
-version = "0.103.2"
+version = "0.104.3"
 description = "Bilingual grayscale image deconvolution GUI with known and blind PSF methods"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,8 +41,8 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = ["torch>=2.2"]
-test = ["pytest>=8"]
-dev = ["pytest>=8", "build>=1.2", "twine>=5", "ruff>=0.6"]
+test = ["pytest>=8", "tomli>=2; python_version < '3.11'"]
+dev = ["pytest>=8", "tomli>=2; python_version < '3.11'", "build>=1.2", "twine>=5", "ruff>=0.6"]
 
 [project.scripts]
 dekonwolucje = "deconv.main:main"
@@ -71,8 +71,25 @@ line-length = 120
 [tool.setuptools.data-files]
 "share/doc/dekonwolucje" = [
   "docs/Deconvolution_GUI_and_Methods_EN.pdf",
+  "docs/Deconvolution_GUI_and_Methods_EN.tex",
   "docs/USER_GUIDE_EN.md",
   "docs/USER_GUIDE_PL.md",
   "docs/ARCHITECTURE_EN.md",
   "docs/ARCHITECTURE_PL.md",
+  "docs/API_EN.md",
+  "docs/API_PL.md",
+  "docs/REFERENCES.md",
+]
+"share/doc/dekonwolucje/api-example-output" = [
+  "docs/examples/wiener_motion_comparison.png",
+]
+"share/doc/dekonwolucje/examples" = [
+  "examples/wiener_motion_blur.py",
+]
+"share/doc/dekonwolucje/screenshots" = [
+  "docs/screenshots/README.md",
+  "docs/screenshots/01-gui-overview.png",
+  "docs/screenshots/02-psf-preparation.png",
+  "docs/screenshots/03-kaczmarz-settings.png",
+  "docs/screenshots/04-result-history.png",
 ]

@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from deconv.algorithms.registry import AlgorithmRegistry
-from deconv.core.runtime import GrayImage, PSF, degrade_image, degradation_kernel_for_image
+from deconv.core.runtime import TORCH_AVAILABLE, GrayImage, PSF, degrade_image, degradation_kernel_for_image
 
 
 class AlgorithmSmokeTests(unittest.TestCase):
@@ -28,6 +28,8 @@ class AlgorithmSmokeTests(unittest.TestCase):
         registry = AlgorithmRegistry()
         for name in registry.names():
             with self.subTest(algorithm=name):
+                if name.startswith(("Torch ", "PyTorch ")) and not TORCH_AVAILABLE:
+                    continue
                 result = registry.get(name).run(measured, psf, **common)
                 self.assertEqual(result.image.data.shape, measured.data.shape)
                 self.assertTrue(np.isfinite(result.image.data).all())

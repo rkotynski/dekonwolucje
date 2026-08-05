@@ -1,4 +1,6 @@
 include README.md CHANGELOG.md LICENSE CITATION.cff CONTRIBUTING.md SECURITY.md
-recursive-include docs *.md *.pdf *.tex
+recursive-include docs *.md *.pdf *.tex *.png *.jpg *.jpeg
 recursive-include models *.md *.json
 recursive-include .github *.yml *.yaml
+
+recursive-include examples *.py
