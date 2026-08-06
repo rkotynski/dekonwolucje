@@ -4,7 +4,7 @@
 
 - `deconv/core/` — niezależne od GUI modele obrazu i PSF, operatory FFT i splotu, metryki, progowanie, poziomy wyświetlania i wspólne procedury numeryczne.
 - `deconv/algorithms/` — konkretne implementacje dekonwolucji i rejestr algorytmów.
-- `deconv/optim/` — strojenie Auto i izolowany proces obliczeniowy.
+- `deconv/optim/` — niezależne od GUI strojenie Auto, narzędzia wsadowe i izolowany proces obliczeniowy GUI.
 - `deconv/denoisers/` — opcjonalne architektury odszumiaczy neuronowych i ich wczytywanie.
 - `deconv/gui/` — adaptery GUI, w tym tłumaczone widżety Qt.
 - `deconv/api.py` — stabilne punkty wejścia niezależne od Qt do skryptów, notebooków i zadań wsadowych.
@@ -73,3 +73,8 @@ Metadane projektu i punkty uruchomieniowe są zadeklarowane w `pyproject.toml`. 
 ## Dokumentacja PDF
 
 `docs/Deconvolution_GUI_and_Methods_EN.pdf` zawiera zbiorczy angielski opis GUI i metod numerycznych. Kod źródłowy LaTeX jest przechowywany obok pliku PDF.
+
+
+## Publiczne Auto
+
+`deconv/optim/auto_api.py` zawiera niezależny od Qt silnik doboru parametrów używany przez `auto_tune_parameters()` i `auto_deconvolve()`. Obsługuje strategię współrzędnych z lokalnym dopasowaniem paraboli oraz ograniczone przeszukiwanie wsadowe, przy zachowaniu zamrożonego stanu wyłączonych etapów opcjonalnych.

@@ -1,3 +1,18 @@
+## 0.106.0
+
+- Added GUI-independent Auto parameter selection through `auto_tune_parameters()` and `auto_deconvolve()`.
+- Added `AutoTuneOptions`, `AutoTuningResult`, quadratic-coordinate and full-batched search strategies.
+- Preserved the GUI rule that disabled Wiener, denoiser and optional TV stages cannot be changed by Auto.
+- Added reference-based PSNR scoring, reference-free Wiener GCV and the GUI no-reference criterion.
+- Added a standalone Auto-tuned Richardson-Lucy example and bilingual API/PDF documentation.
+
+## 0.105.0
+
+- Expanded the Qt-independent API to expose all 15 registered algorithms through the generic runner and dedicated convenience wrappers.
+- Added Gaussian, high-frequency, and incoherent-lens PSF generators plus a generic PSF dispatcher.
+- Added and corrected standalone examples for Richardson-Lucy, Richardson-Lucy-Wiener, Richardson-Lucy-Rosen, Landweber, and Block Kaczmarz.
+- Updated project authors to Amine Güneş and Rafał Kotyński, University of Warsaw, Faculty of Physics.
+
 ## 0.104.4
 
 - Embedded the four final GUI screenshots directly in the main bilingual README.

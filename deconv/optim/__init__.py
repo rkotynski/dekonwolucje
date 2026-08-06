@@ -5,6 +5,7 @@ compatibility module, which itself uses the isolated Auto numerical process.
 """
 from .batch import BatchedScores
 from .auto_process import AutoCancelledError, AutoProcessError, AutoNumericalProcessClient
+from .auto_api import AutoTuneOptions, AutoTuningCancelled, AutoTuningResult, tune_parameters
 
 
 def __getattr__(name):
@@ -20,4 +21,8 @@ __all__ = [
     "AutoCancelledError",
     "AutoProcessError",
     "AutoNumericalProcessClient",
+    "AutoTuneOptions",
+    "AutoTuningCancelled",
+    "AutoTuningResult",
+    "tune_parameters",
 ]

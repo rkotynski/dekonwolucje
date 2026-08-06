@@ -4,7 +4,7 @@
 
 - `deconv/core/` — GUI-independent image/PSF models, FFT and convolution operators, metrics, thresholds, display-level helpers and common numerical utilities.
 - `deconv/algorithms/` — concrete deconvolution implementations and registry.
-- `deconv/optim/` — Auto tuning and the isolated numerical worker process.
+- `deconv/optim/` — GUI-independent Auto tuning, batch helpers, and the isolated GUI numerical worker process.
 - `deconv/denoisers/` — optional neural-denoiser architectures and loading helpers.
 - `deconv/gui/` — GUI adapters, including translated Qt widgets.
 - `deconv/api.py` — stable Qt-independent entry points for scripts, notebooks, and batch jobs.
@@ -53,9 +53,9 @@ Fixed PSF spectra are cached. Torch operators use `float32` by default.
 
 `deconv.api` is the supported integration layer outside the GUI. It converts NumPy arrays to `GrayImage`/`PSF`, exposes the canonical algorithm registry, merges default and user parameters, prepares the calculation-safe PSF, and returns the native `DeconvolutionResult`. It imports no Qt modules.
 
-The stable functions are `run_deconvolution`, `wiener_filter`, `available_algorithms`, `default_parameters`, `generate_test_image`, `generate_motion_psf`, `disturb_image`, `as_gray_image`, `as_psf`, and `save_grayscale`. GUI state and `legacy_runtime.py` are not public numerical APIs.
+The stable functions include `run_deconvolution`, `auto_tune_parameters`, `auto_deconvolve`, the algorithm convenience wrappers, the PSF generators, `disturb_image`, conversion helpers, and `save_grayscale`. `deconv/optim/auto_api.py` contains the Qt-independent Auto engine; GUI state and `legacy_runtime.py` are not public numerical APIs.
 
-See `docs/API_EN.md` and `examples/wiener_motion_blur.py`.
+See `docs/API_EN.md`, `examples/wiener_motion_blur.py`, and `examples/auto_richardson_lucy_motion.py`.
 
 ## Adding an algorithm
 

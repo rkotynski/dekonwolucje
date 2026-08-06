@@ -1,3 +1,16 @@
+## 0.106.0
+
+- Dodano publiczny, niezależny od Qt automatyczny dobór parametrów Auto i automatyczną dekonwolucję.
+- Dodano strategie przeszukiwania współrzędnych z dopasowaniem kwadratowym i ograniczonego przeszukiwania wsadowego, strojenie przez odpowiednik Torch oraz weryfikację na żądanej implementacji.
+- Dodano samodzielny przykład Auto dla metody Richardsona-Lucy'ego i rozszerzono dokumentację API.
+
+## 0.105.0
+
+- Rozszerzono niezależne od Qt API o wszystkie 15 zarejestrowanych algorytmów i dedykowane funkcje skrótowe.
+- Dodano generatory PSF Gaussa, wysokoczęstotliwościowej i niekoherentnej soczewki oraz ogólny dispatcher PSF.
+- Dodano i poprawiono przykłady Richardson-Lucy, Richardson-Lucy-Wiener, Richardson-Lucy-Rosen, Landwebera i blokowej metody Kaczmarza.
+- Zaktualizowano listę autorów: Amine Güneş i Rafał Kotyński, University of Warsaw, Faculty of Physics.
+
 ## 0.104.4
 
 - Osadzono cztery końcowe zrzuty GUI bezpośrednio w głównym dwujęzycznym pliku README.

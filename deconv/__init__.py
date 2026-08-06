@@ -1,36 +1,8 @@
 """GUI and reusable Python API for grayscale image deconvolution."""
 
-__version__ = "0.104.4"
+__version__ = "0.106.0"
 
-from .api import (
-    DeconvolutionResult,
-    GrayImage,
-    PSF,
-    as_gray_image,
-    as_psf,
-    available_algorithms,
-    default_parameters,
-    disturb_image,
-    generate_motion_psf,
-    generate_test_image,
-    run_deconvolution,
-    save_grayscale,
-    wiener_filter,
-)
+from .api import *  # noqa: F401,F403
+from .api import __all__ as _api_all
 
-__all__ = [
-    "__version__",
-    "DeconvolutionResult",
-    "GrayImage",
-    "PSF",
-    "as_gray_image",
-    "as_psf",
-    "available_algorithms",
-    "default_parameters",
-    "disturb_image",
-    "generate_motion_psf",
-    "generate_test_image",
-    "run_deconvolution",
-    "save_grayscale",
-    "wiener_filter",
-]
+__all__ = ["__version__", *_api_all]

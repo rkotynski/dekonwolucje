@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dekonwolucje"
-version = "0.104.4"
-description = "Bilingual grayscale image deconvolution GUI with known and blind PSF methods"
+version = "0.106.0"
+description = "Image deconvolution toolkit with bilingual GUI and Python API for CPU/GPU methods"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
+  { name = "Amine Güneş" },
   { name = "Rafał Kotyński" }
 ]
 maintainers = [
@@ -85,6 +86,12 @@ line-length = 120
 ]
 "share/doc/dekonwolucje/examples" = [
   "examples/wiener_motion_blur.py",
+  "examples/richardson_lucy_motion_blur.py",
+  "examples/richardson_lucy_wiener_gaussian.py",
+  "examples/richardson_lucy_rosen_hf.py",
+  "examples/landweber_motion.py",
+  "examples/kaczmarz_gaussian.py",
+  "examples/auto_richardson_lucy_motion.py",
 ]
 "share/doc/dekonwolucje/screenshots" = [
   "docs/screenshots/README.md",

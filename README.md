@@ -98,7 +98,25 @@ result = wiener_filter(disturbed, psf, K=2e-3)
 restored = result.image.data
 ```
 
-A complete runnable example is provided in `examples/wiener_motion_blur.py`. See [API_EN.md](docs/API_EN.md) for the complete interface and all registered algorithms.
+The API covers all 15 registered CPU/Torch algorithms and all four generated PSF families (Gaussian, motion, high-frequency, and incoherent-lens PSFs). Complete examples are provided in `examples/` for Wiener, Richardson-Lucy, Richardson-Lucy-Wiener, Richardson-Lucy-Rosen, Landweber, and Block Kaczmarz. See [API_EN.md](docs/API_EN.md) for the full interface.
+
+Automatic parameter selection is also available without the GUI:
+
+```python
+from deconv.api import AutoTuneOptions, auto_deconvolve
+
+tuning = auto_deconvolve(
+    disturbed, psf,
+    algorithm="Richardson-Lucy",
+    reference=reference,
+    params={"iterations": 20, "begin_with_wiener": False},
+    auto_options=AutoTuneOptions(strategy="quadratic"),
+)
+restored = tuning.deconvolution_result.image.data
+print(tuning.best_params)
+```
+
+Auto uses PSNR when an independent reference is supplied, Wiener GCV for reference-free plain Wiener tuning, and the GUI's no-reference criterion for the remaining methods. Disabled optional stages and their dependent parameters remain unchanged.
 
 ### AI-assisted development disclosure
 
@@ -111,9 +129,9 @@ python -m pip install -e ".[test]"
 pytest
 ```
 
-### License and author
+### License and authors
 
-MIT License. Copyright © 2026 **Rafał Kotyński**, University of Warsaw, Faculty of Physics.
+MIT License. Copyright © 2026 **Amine Güneş and Rafał Kotyński**, University of Warsaw, Faculty of Physics.
 
 Homepage: <https://github.com/rkotynski/dekonwolucje>
 
@@ -180,6 +198,24 @@ restored = result.image.data
 
 Kompletny przykład znajduje się w `examples/wiener_motion_blur.py`. Pełny opis interfejsu i wszystkich zarejestrowanych algorytmów zawiera [API_PL.md](docs/API_PL.md).
 
+Automatyczny dobór parametrów jest również dostępny bez GUI:
+
+```python
+from deconv.api import AutoTuneOptions, auto_deconvolve
+
+tuning = auto_deconvolve(
+    disturbed, psf,
+    algorithm="Richardson-Lucy",
+    reference=reference,
+    params={"iterations": 20, "begin_with_wiener": False},
+    auto_options=AutoTuneOptions(strategy="quadratic"),
+)
+restored = tuning.deconvolution_result.image.data
+print(tuning.best_params)
+```
+
+Auto używa PSNR, gdy podano niezależną referencję, GCV dla zwykłego filtru Wienera bez referencji oraz kryterium bezreferencyjnego GUI dla pozostałych metod. Wyłączone etapy opcjonalne i ich parametry zależne nie są zmieniane.
+
 ### Informacja o użyciu narzędzi AI
 
 Przy przygotowaniu części programu i dokumentacji korzystano z narzędzi opartych na dużych modelach językowych (LLM). Ich sugestie włączano w ramach procesu tworzenia projektu; metody numeryczne, szczegóły implementacji i wyniki należy jednak niezależnie zweryfikować dla zamierzonego zastosowania naukowego.
@@ -191,9 +227,9 @@ python -m pip install -e ".[test]"
 pytest
 ```
 
-### Licencja i autor
+### Licencja i autorzy
 
-Licencja MIT. Copyright © 2026 **Rafał Kotyński**, Wydział Fizyki Uniwersytetu Warszawskiego.
+Licencja MIT. Copyright © 2026 **Amine Güneş i Rafał Kotyński**, Wydział Fizyki Uniwersytetu Warszawskiego.
 
 Strona projektu: <https://github.com/rkotynski/dekonwolucje>
 

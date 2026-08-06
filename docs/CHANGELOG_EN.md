@@ -1,3 +1,16 @@
+## 0.106.0
+
+- Added public, Qt-independent Auto parameter tuning and automatic deconvolution.
+- Added quadratic-coordinate and bounded full-batched strategies, optional Torch proxy tuning and validation on the requested implementation.
+- Added a standalone Auto Richardson-Lucy example and expanded API documentation.
+
+## 0.105.0
+
+- Expanded the Qt-independent API to expose all 15 registered algorithms through the generic runner and dedicated convenience wrappers.
+- Added Gaussian, high-frequency, and incoherent-lens PSF generators plus a generic PSF dispatcher.
+- Added and corrected standalone examples for Richardson-Lucy, Richardson-Lucy-Wiener, Richardson-Lucy-Rosen, Landweber, and Block Kaczmarz.
+- Updated project authors to Amine Güneş and Rafał Kotyński, University of Warsaw, Faculty of Physics.
+
 ## 0.104.4
 
 - Embedded the four final GUI screenshots directly in the main bilingual README.
