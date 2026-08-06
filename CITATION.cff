@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software in research, please cite the repository."
 title: "Dekonwolucje: bilingual grayscale image deconvolution GUI"
 type: software
-version: 0.106.0
+version: 0.108.0
 date-released: 2026-08-06
 license: MIT
 authors:

@@ -1,3 +1,17 @@
+## 0.108.0
+
+- Added a bilingual **Clear images** action in Tab 1.
+- The action removes loaded/generated images, PSFs, reconstruction histories and results while preserving GUI and algorithm settings.
+- Clearing is postponed safely if an Auto or reconstruction worker has not yet stopped.
+
+## 0.107.0
+
+- Separated experimental disturbed-image loading from optional reference-image loading in Tab 1.
+- Loading a disturbed image no longer creates or duplicates a reference image.
+- Added a dedicated **Load reference image** action for optional ground truth used only by metrics and reference-based Auto.
+- Preserved separately loaded disturbed and reference images when PSF or zero-padding settings are changed.
+- Added regression tests and updated bilingual user/PDF documentation.
+
 ## 0.106.0
 
 - Added GUI-independent Auto parameter selection through `auto_tune_parameters()` and `auto_deconvolve()`.

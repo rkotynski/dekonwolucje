@@ -12,11 +12,17 @@ Pierwsza karta służy do wczytywania lub generowania obrazu źródłowego i PSF
 
 Kolejność przycisków:
 
-1. **Wczytaj obraz**
-2. **Wczytaj PSF**
-3. **Wygeneruj obraz testowy**
-4. **Wygeneruj wybraną PSF**
-5. **Wygeneruj obraz zaburzony**
+1. **Wczytaj obraz zaburzony**
+2. **Wczytaj obraz referencyjny** (opcjonalnie)
+3. **Wczytaj PSF**
+4. **Wygeneruj obraz testowy**
+5. **Wygeneruj wybraną PSF**
+6. **Wygeneruj obraz zaburzony**
+7. **Wyczyść obrazy**
+
+Dla danych eksperymentalnych przycisk **Wczytaj obraz zaburzony** tworzy wyłącznie dane wejściowe rekonstrukcji. Nie tworzy ani nie duplikuje obrazu referencyjnego. Niezależny obraz prawdziwy można wczytać osobno przyciskiem **Wczytaj obraz referencyjny**; jest on używany tylko do PSNR/SSIM i kryteriów Auto opartych na referencji, nigdy jako wejście rekonstrukcji. Gdy referencji nie wczytano, jej podgląd pozostaje ukryty, a metryki referencyjne są wyłączone.
+
+**Wyczyść obrazy** usuwa wczytane lub wygenerowane obrazy, PSF, historie rekonstrukcji i wyniki, ale zachowuje bieżące ustawienia obliczeń, GUI i algorytmów.
 
 Jeżeli tablice obrazu i PSF mają różne wymiary, mniejsza tablica jest centrycznie dopełniana zerami do wspólnego płótna. Piksele nie są skalowane ani przycinane.
 

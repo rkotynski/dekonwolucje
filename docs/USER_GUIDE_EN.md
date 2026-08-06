@@ -12,11 +12,17 @@ The first tab loads or generates the source image and PSF. Its previews and hist
 
 Buttons are ordered as follows:
 
-1. **Load image**
-2. **Load PSF**
-3. **Generate test image**
-4. **Generate selected PSF**
-5. **Generate degraded input**
+1. **Load disturbed image**
+2. **Load reference image** (optional)
+3. **Load PSF**
+4. **Generate test image**
+5. **Generate selected PSF**
+6. **Generate degraded input**
+7. **Clear images**
+
+For experimental data, **Load disturbed image** creates only the reconstruction input. It deliberately does not create or duplicate a reference image. An independent ground-truth image can be added separately with **Load reference image**; it is used only for PSNR/SSIM and reference-based Auto criteria, never as the reconstruction input. When no reference is loaded, the reference preview remains hidden and reference-based metrics are disabled.
+
+**Clear images** removes loaded/generated images, PSFs, reconstruction histories and results, but preserves the current calculation, GUI and algorithm settings.
 
 If image and PSF arrays have different dimensions, the smaller array is centered on a common canvas by zero padding; pixels are not resampled or cropped.
 

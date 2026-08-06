@@ -38,6 +38,54 @@ except Exception:
 
 
 
+_IMAGE_DATA_STATE_KEYS = {
+    "image",
+    "degraded",
+    "psf",
+    "calculation_psf",
+    "degradation_psf",
+    "result",
+    "estimated_psf",
+    "last_run_psf",
+    "last_run_calculation_shape",
+    "last_shape_reconciliation",
+    "measured_pair_loaded",
+    "reference_available",
+    "reference_source",
+    "psf_automatic_selection",
+    "psf_floor_wiener_optimization",
+    "optimized_wiener_k",
+    "psf_calculation_center_mode",
+    "psf_calculation_center_x",
+    "psf_calculation_center_y",
+    "psf_selection_generation",
+    "psf_support_extent",
+    "psf_support_hard_cap",
+    "psf_support_height",
+    "psf_support_width",
+    "limit_psf_support",
+    "_tab2_threshold_base_degraded",
+    "_tab2_threshold_base_psf",
+    "_tab2_threshold_base_degradation_psf",
+    "_tab2_threshold_base_psf_selection",
+}
+
+
+def clear_image_data_state(state: Dict[str, Any]) -> None:
+    """Remove loaded/generated images, PSFs and derived numerical products.
+
+    GUI and algorithm settings are intentionally preserved. In particular, the
+    selected calculation resolution, zero-padding mode and Wiener profile remain
+    unchanged, so another data set can be loaded without rebuilding the
+    numerical configuration.
+    """
+    for key in _IMAGE_DATA_STATE_KEYS:
+        state.pop(key, None)
+    state["reference_available"] = False
+    state["reference_source"] = None
+    state["measured_pair_loaded"] = False
+
+
 def mat_array_candidates(path: str) -> Dict[str, np.ndarray]:
     """Return numeric two-dimensional arrays available in a MATLAB MAT file."""
     raw = loadmat(path)

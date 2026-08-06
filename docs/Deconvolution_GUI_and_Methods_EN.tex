@@ -16,7 +16,7 @@
  pdftitle={Deconvolution GUI: Program Description and Numerical Methods},
  pdfauthor={},pdfsubject={Documentation of the dekonwolucje software},
  pdfkeywords={deconvolution, PSF, Wiener, Richardson-Lucy, blind deconvolution, PyTorch, CUDA}}
-\pagestyle{fancy}\fancyhf{}\lhead{Deconvolution GUI}\rhead{Version 0.106.0}\cfoot{\thepage\ / \pageref{LastPage}}
+\pagestyle{fancy}\fancyhf{}\lhead{Deconvolution GUI}\rhead{Version 0.108.0}\cfoot{\thepage\ / \pageref{LastPage}}
 \titleformat{\section}{\Large\bfseries\color{uwblue}}{\thesection}{0.7em}{}
 \titleformat{\subsection}{\large\bfseries\color{uwblue}}{\thesubsection}{0.7em}{}
 \setlist{nosep,leftmargin=1.6em}\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}\renewcommand{\arraystretch}{1.18}
@@ -44,7 +44,7 @@
 \begin{document}
 \begin{titlepage}\thispagestyle{empty}\centering
 \vspace*{18mm}{\Huge\bfseries\color{uwblue} Deconvolution GUI\par}\vspace{4mm}
-{\LARGE Program Description and Numerical Methods\par}\vspace{13mm}{\Large Version 0.106.0\par}
+{\LARGE Program Description and Numerical Methods\par}\vspace{13mm}{\Large Version 0.108.0\par}
 \vfill\vspace{8mm}{\large \url{https://github.com/rkotynski/dekonwolucje}\par}\vfill
 \begin{minipage}{0.86\textwidth}\small
 This document describes the graphical workflow, numerical data model, convolution operators, implemented deconvolution methods, quality criteria, automatic parameter tuning, and software architecture of the \code{dekonwolucje} project. The software is distributed under the MIT License. Source-code comments and internal identifiers remain in English independently of the selected English or Polish GUI language.
@@ -155,7 +155,7 @@ Width and height are estimated independently, which is useful for motion blur or
 
 \section{Graphical workflow}
 \subsection{Tab 1: image and PSF}
-The main actions are ordered as: \textbf{Load image}, \textbf{Load PSF}, \textbf{Generate test image}, \textbf{Generate selected PSF}, and \textbf{Generate degraded input}. Previews, histograms, and resolution labels describe the committed calculation data. If source image and PSF arrays have different dimensions, the smaller array is centered on a common zero-padded canvas; no resampling is performed by this synchronization.
+The main actions are ordered as: \textbf{Load disturbed image}, \textbf{Load reference image} (optional), \textbf{Load PSF}, \textbf{Generate test image}, \textbf{Generate selected PSF}, \textbf{Generate degraded input}, and \textbf{Clear images}. The last action removes all loaded/generated images, PSFs, reconstruction histories and results while preserving the current GUI and algorithm settings. For experimental data, loading the disturbed image creates only the reconstruction input and explicitly leaves the reference absent. An independent ground-truth image may be loaded separately; it is used only for PSNR, SSIM, and reference-based Auto criteria, never as the reconstruction input. Therefore applying thresholds in Tab~2 cannot create a reference image. Previews, histograms, and resolution labels describe the committed calculation data. If source image and PSF arrays have different dimensions, the smaller array is centered on a common zero-padded canvas; no resampling is performed by this synchronization.
 
 \screenshotfigure{01-gui-overview.png}{0.94}{Main application window. Tab 1 shows the committed calculation image and PSF, their 256-bin histograms and numerical resolutions; the open Language menu documents the English/Polish GUI selector.}
 
@@ -636,5 +636,5 @@ The project is distributed under the MIT License.\\
 \section{AI-assisted development disclosure}
 Parts of the software and documentation were prepared with assistance from tools based on large language models (LLMs). Their suggestions were incorporated as part of the development process. This assistance does not replace independent verification: numerical methods, implementation details, parameter choices, and reconstructed results should be validated for the intended scientific application.
 
-\vfill\begin{center}\small Document generated for software version 0.106.0. The source code is authoritative if implementation details change in later releases.\end{center}
+\vfill\begin{center}\small Document generated for software version 0.108.0. The source code is authoritative if implementation details change in later releases.\end{center}
 \end{document}

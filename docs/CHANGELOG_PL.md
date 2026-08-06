@@ -1,3 +1,15 @@
+# Historia zmian
+
+## 0.108.0
+
+- Dodano przycisk **Wyczyść obrazy** w karcie 1. Usuwa obrazy, PSF, historie i wyniki bez resetowania ustawień GUI ani algorytmów.
+
+## 0.107.0
+
+- Dodano osobne przyciski **Wczytaj obraz zaburzony** i opcjonalny **Wczytaj obraz referencyjny**.
+- Obraz eksperymentalny nie pojawia się już jako referencja po progowaniu w karcie 2.
+- Obraz referencyjny jest używany wyłącznie do metryk i kryteriów Auto opartych na referencji.
+
 ## 0.106.0
 
 - Dodano publiczny, niezależny od Qt automatyczny dobór parametrów Auto i automatyczną dekonwolucję.

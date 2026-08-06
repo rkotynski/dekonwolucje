@@ -47,6 +47,8 @@ A desktop research application for grayscale-image deconvolution with a known or
 
 The interface can be switched at runtime between **English** and **Polish** using **Language / Język** in the menu. The selected language is stored in the active JSON settings profile. Source-code comments, configuration keys and algorithm identifiers remain in English.
 
+For experimental measurements, use **Load disturbed image** for the reconstruction input and **Load PSF** for the measured PSF. This workflow does not create a reference image. An optional independent ground-truth image can be loaded with **Load reference image** and is used only for reference-based metrics and Auto tuning. The **Clear images** button removes all loaded/generated images, PSFs, histories and results while preserving the current GUI and algorithm settings.
+
 ### Installation
 
 ```bash
@@ -142,6 +144,8 @@ Homepage: <https://github.com/rkotynski/dekonwolucje>
 Aplikacja badawcza z interfejsem graficznym do dekonwolucji obrazów w skali szarości ze znaną lub nieznaną punktową funkcją rozmycia (PSF). Program zawiera warianty metod Wienera, Richardsona–Lucy'ego, Rosena, Landwebera, Kaczmarza, Adam TV-MAP i dekonwolucji ślepej, z opcjonalnym przyspieszeniem PyTorch/CUDA.
 
 Język interfejsu można przełączać podczas działania programu między **polskim** i **angielskim** w menu **Język / Language**. Wybór jest zapisywany w aktywnym profilu ustawień JSON. Komentarze w kodzie, klucze konfiguracji i identyfikatory algorytmów pozostają angielskie.
+
+Dla pomiarów eksperymentalnych użyj **Wczytaj obraz zaburzony** jako danych wejściowych rekonstrukcji oraz **Wczytaj PSF** dla zmierzonej PSF. Ten przepływ nie tworzy obrazu referencyjnego. Opcjonalny niezależny obraz prawdziwy można wczytać przyciskiem **Wczytaj obraz referencyjny**; jest on używany wyłącznie do metryk referencyjnych i strojenia Auto.
 
 ### Instalacja
 

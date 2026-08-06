@@ -1,6 +1,6 @@
 """GUI and reusable Python API for grayscale image deconvolution."""
 
-__version__ = "0.106.0"
+__version__ = "0.108.0"
 
 from .api import *  # noqa: F401,F403
 from .api import __all__ as _api_all

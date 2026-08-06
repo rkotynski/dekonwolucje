@@ -1,3 +1,15 @@
+# Changelog
+
+## 0.108.0
+
+- Added **Clear images** to Tab 1. It clears images, PSFs, histories and results without resetting GUI or algorithm settings.
+
+## 0.107.0
+
+- Added separate **Load disturbed image** and optional **Load reference image** actions.
+- Experimental input no longer appears as a reference after Tab-2 thresholding.
+- Reference images are used only for metrics and reference-based Auto criteria.
+
 ## 0.106.0
 
 - Added public, Qt-independent Auto parameter tuning and automatic deconvolution.

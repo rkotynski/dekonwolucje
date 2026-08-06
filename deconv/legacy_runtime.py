@@ -103,7 +103,6 @@ def _calculation_data_summary(state: Dict[str, Any]) -> str:
     return f"Calculation input: {image_text}; calculation PSF: {psf_text}."
 
 
-
 class QDoubleSpinBox(_QtQDoubleSpinBox):
     """More editable double spin box with compact, non-padded display text.
 
@@ -594,6 +593,7 @@ class HistogramCanvas(FigureCanvas):
 
 class LoadGenerateTab(QWidget):
     calculationPsfSupportChanged = pyqtSignal(int)
+    clearImagesRequested = pyqtSignal()
     resetRequested = pyqtSignal()
     exitRequested = pyqtSignal()
 
@@ -604,19 +604,26 @@ class LoadGenerateTab(QWidget):
         layout = QVBoxLayout(self)
 
         buttons = QHBoxLayout()
-        btn_load_img = QPushButton("Load image")
+        btn_load_img = QPushButton("Load disturbed image")
+        btn_load_reference = QPushButton("Load reference image")
         btn_load_psf = QPushButton("Load PSF")
         btn_synth_img = QPushButton("Generate test image")
         btn_psf = QPushButton("Generate selected PSF")
         btn_degrade = QPushButton("Generate degraded input")
+        btn_clear_images = QPushButton("Clear images")
+        btn_clear_images.setToolTip(
+            "Remove all loaded or generated images, PSFs, reconstruction histories and results while keeping GUI and algorithm settings."
+        )
         btn_reset = QPushButton("Reset")
         btn_exit = QPushButton("Exit")
         buttons.addWidget(btn_load_img)
+        buttons.addWidget(btn_load_reference)
         buttons.addWidget(btn_load_psf)
         buttons.addWidget(btn_synth_img)
         buttons.addWidget(btn_psf)
         buttons.addWidget(btn_degrade)
         buttons.addStretch(1)
+        buttons.addWidget(btn_clear_images)
         buttons.addWidget(btn_reset)
         buttons.addWidget(btn_exit)
         layout.addLayout(buttons)
@@ -683,8 +690,10 @@ class LoadGenerateTab(QWidget):
         controls.addRow("Noise strength", self.noise_spin)
         controls_content_layout.addLayout(controls)
         padding_note = QLabel(
+            "Load disturbed image creates only the reconstruction input; it does not create a reference image. "
+            "Load reference image is optional and supplies independent ground truth only for PSNR/SSIM and reference-based Auto criteria. "
             "The generated PSF size describes the generated source array. The exact thresholded, cropped and unit-sum-normalized PSF used in calculations is selected in Tab 2 and is shown in this tab. "
-            "The reconstruction input shown here is the current processed degraded/measured image. Reset thresholds / PSF selection in Tab 2 is the only action that restores the disk-loaded or generated source arrays."
+            "Reset thresholds / PSF selection in Tab 2 is the only action that restores the disk-loaded or generated source arrays."
         )
         padding_note.setWordWrap(True)
         controls_content_layout.addWidget(padding_note)
@@ -741,11 +750,13 @@ class LoadGenerateTab(QWidget):
         content_splitter.setSizes([520, 900])
         layout.addWidget(content_splitter, 1)
 
-        btn_load_img.clicked.connect(self.load_image)
+        btn_load_img.clicked.connect(self.load_disturbed_image)
+        btn_load_reference.clicked.connect(self.load_reference_image)
         btn_synth_img.clicked.connect(self.generate_image)
         btn_load_psf.clicked.connect(self.load_psf_image)
         btn_psf.clicked.connect(self.generate_selected_psf)
         btn_degrade.clicked.connect(self.generate_degraded_input)
+        btn_clear_images.clicked.connect(self.clearImagesRequested.emit)
         btn_reset.clicked.connect(self.resetRequested.emit)
         btn_exit.clicked.connect(self.exitRequested.emit)
         self.zero_padding_check.toggled.connect(self._on_zero_padding_changed)
@@ -1163,68 +1174,82 @@ class LoadGenerateTab(QWidget):
         return f"{prefix}, visible zero padding disabled"
 
     def reframe_reference_for_current_psf(self) -> None:
-        """Rebuild loaded data after a PSF-support or padding-mode change."""
+        """Rebuild independently loaded reference and disturbed images.
+
+        A measured/disturbed image is never promoted to a reference image.  If
+        both arrays are present, they are reframed independently and remain
+        distinct.  Synthetic disturbed data are invalidated when the reference
+        geometry changes, because they can be regenerated from the reference and
+        current calculation PSF.
+        """
         padding = self.current_zero_padding(self.state.get("psf"))
         width = int(self.image_width_spin.value())
         height = int(self.image_height_spin.value())
-        reference_available = self.state.get("reference_available") is not False
-        image: Optional[GrayImage] = self.state.get("image")
+        reference_available = bool(self.state.get("reference_available", False))
+        reference: Optional[GrayImage] = self.state.get("image")
+        disturbed: Optional[GrayImage] = self.state.get("degraded")
         psf: Optional[PSF] = self.state.get("psf")
-        degraded_before: Optional[GrayImage] = self.state.get("degraded")
-        recreate_loaded_measured = bool(
-            reference_available
-            and degraded_before is not None
-            and degraded_before.metadata.get("measured_input", False)
-        )
 
-        if reference_available and image is not None:
-            source = image.metadata.get("source_array")
+        if reference_available and isinstance(reference, GrayImage):
+            source = reference.metadata.get("source_array")
             if source is None:
-                source = image.data
-            rebuilt = GrayImage.from_array_with_zero_frame(source, width=width, height=height, padding=padding, name=image.name)
-            rebuilt.metadata["zero_padding_enabled"] = self.zero_padding_check.isChecked()
-            rebuilt = self._pad_image_to_psf_if_required(rebuilt, psf)
-            self.state["image"] = rebuilt
+                source = reference.data
+            rebuilt_reference = GrayImage.from_array_with_zero_frame(
+                source, width=width, height=height, padding=padding, name=reference.name
+            )
+            rebuilt_reference.metadata.update({
+                "zero_padding_enabled": self.zero_padding_check.isChecked(),
+                "reference_input": True,
+                "_preserve_intensity": True,
+            })
+            rebuilt_reference = self._pad_image_to_psf_if_required(rebuilt_reference, psf)
+            self.state["image"] = rebuilt_reference
+            self.image_canvas.setVisible(True)
+            self.image_canvas.show_image(
+                rebuilt_reference.data,
+                self._padding_title("Reference image (metrics only)", padding),
+            )
+        else:
+            self.state.pop("image", None)
+            self.state["reference_available"] = False
+            self.image_canvas.setVisible(False)
+            self.image_canvas.show_image(None, "Reference image (not loaded)")
+
+        if isinstance(disturbed, GrayImage) and disturbed.metadata.get("measured_input", False):
+            source = disturbed.metadata.get("source_array")
+            if source is None:
+                source = disturbed.data
+            old_meta = dict(disturbed.metadata)
+            rebuilt_disturbed = GrayImage.from_array_with_zero_frame(
+                source, width=width, height=height, padding=padding, name=disturbed.name
+            )
+            layout_meta = dict(rebuilt_disturbed.metadata)
+            rebuilt_disturbed.metadata.update(old_meta)
+            rebuilt_disturbed.metadata.update({
+                "calculation_size": layout_meta.get("calculation_size", rebuilt_disturbed.data.shape),
+                "zero_padding": int(padding),
+                "zero_padding_enabled": self.zero_padding_check.isChecked(),
+                "inner_size": layout_meta.get("inner_size"),
+                "content_roi": layout_meta.get("content_roi"),
+                "source_array": np.asarray(source, dtype=np.float64).copy(),
+                "measured_input": True,
+                "_preserve_intensity": True,
+            })
+            rebuilt_disturbed = self._pad_image_to_psf_if_required(rebuilt_disturbed, psf)
+            self.state["degraded"] = rebuilt_disturbed
+            self.degraded_canvas.show_image(
+                rebuilt_disturbed.data,
+                self._padding_title("Measured/disturbed input", padding),
+            )
+        elif reference_available and isinstance(reference, GrayImage) and disturbed is not None:
+            # A synthetic disturbed image depends on the previous geometry and
+            # must be regenerated after padding or resolution changes.
             self.state.pop("degraded", None)
             self.state.pop("degradation_psf", None)
-            self.image_canvas.show_image(rebuilt.data, self._padding_title("Reference image", padding))
-            if recreate_loaded_measured:
-                measured_meta = dict(rebuilt.metadata)
-                measured_meta.update({"measured_input": True, "_preserve_intensity": True})
-                self.state["degraded"] = GrayImage(
-                    rebuilt.data.copy(),
-                    name=rebuilt.name + "_measured_input",
-                    metadata=measured_meta,
-                )
-                self.degraded_canvas.show_image(self.state["degraded"].data, "Loaded image as measured/degraded input")
-            else:
-                self.degraded_canvas.show_image(None, "Degraded input")
-            return
+            self.degraded_canvas.show_image(None, "Disturbed input")
 
-        # Paired measured data have no reference image. Rebuild their visible
-        # frame from the preserved original source without changing PSF values.
-        measured: Optional[GrayImage] = self.state.get("degraded")
-        if measured is not None and measured.metadata.get("measured_input", False):
-            source = measured.metadata.get("source_array")
-            if source is not None:
-                old_meta = dict(measured.metadata)
-                rebuilt = GrayImage.from_array_with_zero_frame(
-                    source, width=width, height=height, padding=padding, name=measured.name
-                )
-                new_layout = dict(rebuilt.metadata)
-                rebuilt.metadata.update(old_meta)
-                rebuilt.metadata.update({
-                    "calculation_size": new_layout.get("calculation_size", rebuilt.data.shape),
-                    "zero_padding": int(padding),
-                    "zero_padding_enabled": self.zero_padding_check.isChecked(),
-                    "inner_size": new_layout.get("inner_size"),
-                    "content_roi": new_layout.get("content_roi"),
-                    "source_array": source,
-                    "measured_input": True,
-                })
-                rebuilt = self._pad_image_to_psf_if_required(rebuilt, self.state.get("psf"))
-                self.state["degraded"] = rebuilt
-                self.degraded_canvas.show_image(rebuilt.data, self._padding_title("Measured/degraded input", padding))
+        self._reconcile_image_and_psf_shapes("data reframed for current PSF")
+        self.refresh_calculation_views()
 
     def _on_zero_padding_changed(self, checked: bool) -> None:
         """Apply the visible-padding mode to already loaded/generated data."""
@@ -1242,9 +1267,15 @@ class LoadGenerateTab(QWidget):
         elif not self.rot_symmetry_check.isChecked():
             self.rot_symmetry_check.setChecked(True)
 
-    def load_image(self) -> None:
+    def load_disturbed_image(self) -> None:
+        """Load an experimental/measured reconstruction input without a reference.
+
+        Loading a disturbed image deliberately clears any previous reference.
+        An independent reference can be loaded afterwards with
+        :meth:`load_reference_image`.
+        """
         path, _ = QFileDialog.getOpenFileName(
-            self, "Load image", self._image_dialog_start_directory(),
+            self, "Load disturbed image", self._image_dialog_start_directory(),
             "Monochrome images and MAT (*.png *.tif *.tiff *.bmp *.jpg *.jpeg *.mat);;All files (*)"
         )
         if not path:
@@ -1253,43 +1284,111 @@ class LoadGenerateTab(QWidget):
         try:
             self._clear_tab2_threshold_bases()
             mat_key = _choose_mat_variable(
-                self, path, ("degraded", "measured", "image", "result", "reference"), "image"
+                self, path, ("degraded", "disturbed", "measured", "image", "result"), "disturbed image"
             )
             if mat_key == "":
                 return
             raw = load_monochrome_array(
-                path, mat_key=mat_key, preferred_mat_keys=("degraded", "measured", "image", "result", "reference")
+                path,
+                mat_key=mat_key,
+                preferred_mat_keys=("degraded", "disturbed", "measured", "image", "result"),
             )
-            self._ask_to_adopt_loaded_shape(raw.shape, "loaded image")
+            self._ask_to_adopt_loaded_shape(raw.shape, "loaded disturbed image")
             padding = self.current_zero_padding(self.state.get("psf"))
-            self.state["image"] = GrayImage.from_array_with_zero_frame(
+            disturbed = GrayImage.from_array_with_zero_frame(
                 raw,
                 width=self.image_width_spin.value(),
                 height=self.image_height_spin.value(),
                 padding=padding,
                 name=path,
             )
-            self.state["image"].metadata["zero_padding_enabled"] = self.zero_padding_check.isChecked()
-            self.state["image"] = self._pad_image_to_psf_if_required(self.state["image"], self.state.get("psf"))
-            self.state["reference_available"] = True
-            self.state["measured_pair_loaded"] = False
-            self.image_canvas.setVisible(True)
-            measured_meta = dict(self.state["image"].metadata)
-            measured_meta.update({"measured_input": True, "_preserve_intensity": True})
-            self.state["degraded"] = GrayImage(
-                self.state["image"].data.copy(),
-                name=self.state["image"].name + "_measured_input",
-                metadata=measured_meta,
+            disturbed.metadata.update({
+                "zero_padding_enabled": self.zero_padding_check.isChecked(),
+                "measured_input": True,
+                "_preserve_intensity": True,
+                "input_role": "disturbed",
+            })
+            self.state["degraded"] = self._pad_image_to_psf_if_required(
+                disturbed, self.state.get("psf")
             )
+            # Experimental input has no ground-truth reference unless the user
+            # explicitly loads one with the dedicated button.
+            self.state.pop("image", None)
+            self.state["reference_available"] = False
+            self.state["reference_source"] = None
+            self.state["measured_pair_loaded"] = True
             self.state.pop("degradation_psf", None)
             self.state.pop("result", None)
             self.state.pop("estimated_psf", None)
-            self._reconcile_image_and_psf_shapes("image loaded")
-            self.image_canvas.show_image(self.state["image"].data, self._padding_title("Reference image", padding))
-            self.degraded_canvas.show_image(self.state["degraded"].data, "Loaded image as measured/degraded input")
-            self.update_psf_preview()
+            self._reconcile_image_and_psf_shapes("disturbed image loaded")
+            self.image_canvas.setVisible(False)
+            self.image_canvas.show_image(None, "Reference image (not loaded)")
+            self.degraded_canvas.show_image(
+                self.state["degraded"].data,
+                self._padding_title("Loaded measured/disturbed input", padding),
+            )
+            self.refresh_calculation_views()
         except Exception as exc:
-            QMessageBox.warning(self, "Image load error", f"Could not load image:\n{exc}")
+            QMessageBox.warning(self, "Image load error", f"Could not load disturbed image:\n{exc}")
+
+    def load_image(self) -> None:
+        """Backward-compatible alias for loading the disturbed input."""
+        self.load_disturbed_image()
+
+    def load_reference_image(self) -> None:
+        """Load an optional independent ground-truth image for metrics and Auto."""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Load reference image", self._image_dialog_start_directory(),
+            "Monochrome images and MAT (*.png *.tif *.tiff *.bmp *.jpg *.jpeg *.mat);;All files (*)"
+        )
+        if not path:
+            return
+        self._remember_loaded_image_path(path)
+        try:
+            mat_key = _choose_mat_variable(
+                self, path, ("reference", "ground_truth", "original", "image"), "reference image"
+            )
+            if mat_key == "":
+                return
+            raw = load_monochrome_array(
+                path,
+                mat_key=mat_key,
+                preferred_mat_keys=("reference", "ground_truth", "original", "image"),
+            )
+            self._ask_to_adopt_loaded_shape(raw.shape, "loaded reference image")
+            padding = self.current_zero_padding(self.state.get("psf"))
+            reference = GrayImage.from_array_with_zero_frame(
+                raw,
+                width=self.image_width_spin.value(),
+                height=self.image_height_spin.value(),
+                padding=padding,
+                name=path,
+            )
+            reference.metadata.update({
+                "zero_padding_enabled": self.zero_padding_check.isChecked(),
+                "reference_input": True,
+                "_preserve_intensity": True,
+                "input_role": "reference",
+            })
+            self.state["image"] = self._pad_image_to_psf_if_required(
+                reference, self.state.get("psf")
+            )
+            self.state["reference_available"] = True
+            self.state["reference_source"] = "loaded"
+            self.state["measured_pair_loaded"] = False
+            self.state.pop("result", None)
+            self.state.pop("estimated_psf", None)
+            self._reconcile_image_and_psf_shapes("reference image loaded")
+            self.image_canvas.setVisible(True)
+            self.refresh_calculation_views()
+            if isinstance(self.state.get("degraded"), GrayImage) and not reference_metrics_available(self.state):
+                QMessageBox.information(
+                    self,
+                    "Reference image",
+                    "The loaded reference is numerically identical to the disturbed input, so PSNR/SSIM remain disabled.",
+                )
+        except Exception as exc:
+            QMessageBox.warning(self, "Image load error", f"Could not load reference image:\n{exc}")
 
     def generate_image(self) -> None:
         self._clear_tab2_threshold_bases()
@@ -1302,6 +1401,7 @@ class LoadGenerateTab(QWidget):
         self.state["image"].metadata["zero_padding_enabled"] = self.zero_padding_check.isChecked()
         self.state["image"] = self._pad_image_to_psf_if_required(self.state["image"], self.state.get("psf"))
         self.state["reference_available"] = True
+        self.state["reference_source"] = "generated"
         self.state["measured_pair_loaded"] = False
         self.image_canvas.setVisible(True)
         self.state.pop("degraded", None)
@@ -2422,6 +2522,21 @@ class DegradedInputTab(QWidget):
         )
         self.refresh()
         self.calculationDataChanged.emit()
+
+    def clear_data_view(self) -> None:
+        """Clear Tab 2 previews and cached source snapshots without resetting controls."""
+        self._threshold_preview_timer.stop()
+        self._last_psf_selection_generation = -1
+        for key in (
+            "_tab2_threshold_base_degraded",
+            "_tab2_threshold_base_psf",
+            "_tab2_threshold_base_degradation_psf",
+            "_tab2_threshold_base_psf_selection",
+        ):
+            self.state.pop(key, None)
+        self.psf_floor_k_result_label.setText("Joint optimization result: -")
+        self.threshold_status_label.setText("No image or PSF is loaded.")
+        self.refresh()
 
     def refresh(self) -> None:
         reference: Optional[GrayImage] = self.state.get("image")
@@ -6648,6 +6763,7 @@ class DeconvolutionMainWindow(QMainWindow):
         )
         self.alg_tab.update_known_psf_support_info(self.load_tab.current_psf_support_width(self.state.get("psf")))
         self.test_tab = TestTab(self.state, self.alg_tab)
+        self.load_tab.clearImagesRequested.connect(self.clear_images)
         self.load_tab.resetRequested.connect(self.reset_application)
         self.load_tab.exitRequested.connect(self.close)
         self.test_tab.psfRedefined.connect(self._on_psf_redefined)
@@ -6677,6 +6793,47 @@ class DeconvolutionMainWindow(QMainWindow):
         self.degraded_tab.refresh()
         self.alg_tab._update_psf_policy_label()
         self.statusBar().showMessage("Current PSF was redefined from the Test-tab result and applied as the calculation PSF.", 6000)
+
+    def clear_images(self) -> None:
+        """Clear all source and derived image data while preserving settings."""
+        answer = QMessageBox.question(
+            self,
+            "Clear images",
+            "Clear all loaded or generated images, PSFs, reconstruction histories and results while keeping current settings?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+
+        auto_stopped = True
+        run_stopped = True
+        try:
+            auto_stopped = self.alg_tab.cancel_auto_workers(8000)
+        except Exception:
+            auto_stopped = False
+        try:
+            run_stopped = self.test_tab.cancel_run_and_wait(30000)
+        except Exception:
+            run_stopped = False
+        if not (auto_stopped and run_stopped):
+            QMessageBox.warning(
+                self,
+                "Numerical task still running",
+                "Clearing images was postponed because a numerical worker has not yet reached a safe stopping point.",
+            )
+            return
+
+        clear_image_data_state(self.state)
+        self.load_tab._clear_tab2_threshold_bases()
+        self.load_tab.image_canvas.setVisible(False)
+        self.load_tab.refresh_calculation_views()
+        self.degraded_tab.clear_data_view()
+        self.alg_tab._update_psf_policy_label()
+        self.test_tab.reset_runtime_view()
+        self.test_tab.refresh_input_views()
+        self.test_tab.update_selected_method_info()
+        self.statusBar().showMessage("Loaded/generated images, PSFs, histories and results were cleared; settings were preserved.", 6000)
 
     def reset_application(self) -> None:
         answer = QMessageBox.question(
